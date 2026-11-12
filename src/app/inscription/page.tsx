@@ -13,10 +13,12 @@ async function Form({ searchParams }: { searchParams: SP }) {
 
 export default function SignupPage({ searchParams }: { searchParams: SP }) {
   return (
-    <div className="container-page grid place-items-center py-16">
-      <Suspense fallback={<div className="h-[640px] w-full max-w-lg animate-pulse rounded-3xl bg-sand" />}>
-        <Form searchParams={searchParams} />
-      </Suspense>
+    <div className="mesh-light">
+      <div className="container-page grid place-items-center py-14">
+        <Suspense fallback={<div className="h-[640px] w-full max-w-lg animate-pulse rounded-[2rem] bg-white" />}>
+          <Form searchParams={searchParams} />
+        </Suspense>
+      </div>
     </div>
   );
 }

@@ -2,8 +2,10 @@
 
 import { useMemo, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
-import { CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, Mail, Video, X } from "lucide-react";
+import { CalendarCheck, CheckCircle2, ChevronLeft, ChevronRight, Gift, Mail, Video, X } from "lucide-react";
 import type { Teacher } from "@/lib/data";
+import { btn } from "@/components/ui";
+import GoogleIcon from "@/components/GoogleIcon";
 
 const SLOTS: Record<string, string[]> = {
   matin: ["07:00", "08:00", "09:30", "11:00"],
@@ -35,7 +37,6 @@ export default function BookingWidget({ teacher }: { teacher: Teacher }) {
   const days = useMemo(() => {
     if (today === null) return [];
     const start = new Date(today);
-    start.setHours(0, 0, 0, 0);
     start.setDate(start.getDate() + weekOffset * 7);
     return Array.from({ length: 7 }, (_, i) => {
       const d = new Date(start);
@@ -45,134 +46,127 @@ export default function BookingWidget({ teacher }: { teacher: Teacher }) {
   }, [today, weekOffset]);
 
   const slotsFor = (d: Date) => {
-    // Pas de cours le Chabbat (samedi)
+    // Pas de cours pendant Chabbat
     if (d.getDay() === 6) return [];
     const all = teacher.available.flatMap((m) => SLOTS[m]);
     // Le vendredi, uniquement le matin
     if (d.getDay() === 5) return all.filter((s) => s < "12:00");
-    // Variation pseudo-aléatoire stable pour simuler des créneaux déjà pris
+    // Variation stable pour simuler des créneaux déjà pris
     return all.filter((_, i) => (d.getDate() + i) % 3 !== 0);
   };
 
-  const price = type === "essai" ? teacher.trialPrice : teacher.price;
   const duration = type === "essai" ? 25 : 50;
 
   return (
-    <div className="rounded-3xl border-2 border-ink bg-white p-5 shadow-[6px_6px_0_0_var(--color-ink)] sm:p-6">
-      <div className="grid grid-cols-2 gap-1 rounded-xl bg-sand p-1">
-        {(["essai", "cours"] as const).map((k) => (
-          <button
-            key={k}
-            onClick={() => setType(k)}
-            className={`rounded-lg px-3 py-2 text-sm font-bold transition ${type === k ? "bg-white text-ink shadow-sm" : "text-muted"}`}
-          >
-            {k === "essai" ? "Cours d'essai · 25 min" : "Cours · 50 min"}
-          </button>
-        ))}
-      </div>
-
-      <p className="mt-5 text-3xl font-extrabold">
-        {price === 0 ? "Gratuit" : `${price} €`}
-        <span className="ml-2 text-base font-medium text-muted">/ {duration} min</span>
-      </p>
-
-      <div className="mt-5 flex items-center justify-between">
-        <p className="font-bold">Choisissez un créneau</p>
-        <div className="flex gap-1">
-          <button
-            onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
-            disabled={weekOffset === 0}
-            className="grid h-8 w-8 place-items-center rounded-lg border border-line disabled:opacity-40"
-            aria-label="Semaine précédente"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => setWeekOffset((w) => Math.min(3, w + 1))}
-            className="grid h-8 w-8 place-items-center rounded-lg border border-line"
-            aria-label="Semaine suivante"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
+    <div className="overflow-hidden rounded-[2rem] border border-line bg-white shadow-xl shadow-brand-500/10">
+      <div className="bg-gradient-to-br from-brand-500 to-indigo-700 p-6 text-white">
+        <p className="flex items-center gap-2 text-sm font-bold text-white/80">
+          <Gift className="h-4 w-4" /> Premier cours offert
+        </p>
+        <p className="mt-1 font-display text-2xl font-extrabold">Réserver avec {teacher.name.split(" ").slice(0, 2).join(" ")}</p>
+        <div className="mt-4 grid grid-cols-2 gap-1 rounded-full bg-white/15 p-1">
+          {(["essai", "cours"] as const).map((k) => (
+            <button
+              key={k}
+              onClick={() => setType(k)}
+              className={`rounded-full px-3 py-2 text-sm font-bold transition ${type === k ? "bg-white text-ink" : "text-white/85 hover:text-white"}`}
+            >
+              {k === "essai" ? "Essai · 25 min" : "Cours · 50 min"}
+            </button>
+          ))}
         </div>
       </div>
-      <p className="mt-1 text-xs text-muted">Heure de Paris · aucun cours pendant Chabbat</p>
 
-      <div className="mt-3 grid min-h-40 grid-cols-7 gap-1 text-center">
-        {days.map((d) => {
-          const slots = slotsFor(d);
-          return (
-            <div key={d.toISOString()} className="min-w-0">
-              <p className="text-[11px] font-bold uppercase text-muted">{DAY_FMT.format(d).replace(".", "")}</p>
-              <p className="text-sm font-extrabold">{DATE_FMT.format(d)}</p>
-              <div className="mt-2 flex flex-col gap-1">
-                {slots.length === 0 && <span className="py-1 text-xs text-line">—</span>}
-                {slots.map((s) => {
-                  const active = selected?.day.getTime() === d.getTime() && selected.time === s;
-                  return (
-                    <button
-                      key={s}
-                      onClick={() => setSelected({ day: d, time: s })}
-                      className={`rounded-md py-1 text-[11px] font-bold transition sm:text-xs ${
-                        active ? "bg-ink text-white" : "bg-navy-50 text-navy-700 hover:bg-navy-100"
-                      }`}
-                    >
-                      {s}
-                    </button>
-                  );
-                })}
+      <div className="p-5 sm:p-6">
+        <div className="flex items-center justify-between">
+          <p className="font-bold">Choisissez un créneau</p>
+          <div className="flex gap-1">
+            <button
+              onClick={() => setWeekOffset((w) => Math.max(0, w - 1))}
+              disabled={weekOffset === 0}
+              className="grid h-9 w-9 place-items-center rounded-full border border-line disabled:opacity-40"
+              aria-label="Semaine précédente"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setWeekOffset((w) => Math.min(3, w + 1))}
+              className="grid h-9 w-9 place-items-center rounded-full border border-line"
+              aria-label="Semaine suivante"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+        <p className="mt-1 text-xs text-muted">Heure de Paris · aucun cours pendant Chabbat</p>
+
+        <div className="mt-4 grid min-h-40 grid-cols-7 gap-1 text-center">
+          {days.map((d) => {
+            const slots = slotsFor(d);
+            return (
+              <div key={d.toISOString()} className="min-w-0">
+                <p className="text-[11px] font-bold uppercase text-muted">{DAY_FMT.format(d).replace(".", "")}</p>
+                <p className="font-display text-base font-extrabold">{DATE_FMT.format(d)}</p>
+                <div className="mt-2 flex flex-col gap-1">
+                  {slots.length === 0 && <span className="py-1 text-xs text-line">—</span>}
+                  {slots.map((s) => {
+                    const active = selected?.day.getTime() === d.getTime() && selected.time === s;
+                    return (
+                      <button
+                        key={s}
+                        onClick={() => setSelected({ day: d, time: s })}
+                        className={`rounded-lg py-1.5 text-[11px] font-bold transition sm:text-xs ${
+                          active ? "bg-brand-500 text-white shadow-md shadow-brand-500/30" : "bg-surface text-ink hover:bg-brand-50 hover:text-brand-700"
+                        }`}
+                      >
+                        {s}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+
+        <button disabled={!selected} onClick={() => setConfirmOpen(true)} className={`${btn.primary} mt-6 w-full !py-3.5`}>
+          <CalendarCheck className="h-5 w-5" />
+          {selected ? `Réserver le ${LONG_FMT.format(selected.day)} · ${selected.time}` : type === "essai" ? "Réserver mon cours gratuit" : "Réserver un cours"}
+        </button>
+        <Link href={`/messages?to=${teacher.id}`} className={`${btn.outline} mt-2 w-full`}>
+          Envoyer un message
+        </Link>
+
+        <ul className="mt-5 space-y-2 text-sm text-muted">
+          <li className="flex gap-2"><Video className="h-4 w-4 shrink-0 text-brand-500" /> Lien Google Meet créé automatiquement</li>
+          <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0 text-brand-500" /> Confirmation et rappel par e-mail</li>
+          <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 shrink-0 text-brand-500" /> Pas satisfait ? 2e essai gratuit avec un autre enseignant</li>
+        </ul>
       </div>
 
-      <button
-        disabled={!selected}
-        onClick={() => setConfirmOpen(true)}
-        className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gold-400 px-5 py-3.5 font-bold text-ink transition hover:bg-gold-300 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <CalendarCheck className="h-5 w-5" />
-        {selected
-          ? `Réserver le ${LONG_FMT.format(selected.day)} à ${selected.time}`
-          : type === "essai"
-            ? "Réserver un cours d'essai"
-            : "Réserver un cours"}
-      </button>
-      <Link
-        href={`/messages?to=${teacher.id}`}
-        className="mt-2 block w-full rounded-xl border-2 border-line px-5 py-3 text-center font-bold transition hover:border-ink"
-      >
-        Envoyer un message
-      </Link>
-
-      <ul className="mt-5 space-y-2 text-sm text-muted">
-        <li className="flex gap-2"><Video className="h-4 w-4 shrink-0" /> Lien Google Meet créé automatiquement</li>
-        <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0" /> Confirmation et rappel par e-mail</li>
-        <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 shrink-0" /> Annulation gratuite jusqu&apos;à 12 h avant</li>
-      </ul>
-
       {confirmOpen && selected && (
-        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4" role="dialog" aria-modal="true">
-          <div className="relative w-full max-w-md rounded-3xl bg-white p-7">
-            <button onClick={() => setConfirmOpen(false)} className="absolute right-4 top-4 rounded-lg p-1 hover:bg-sand" aria-label="Fermer">
+        <div className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="relative w-full max-w-md rounded-[2rem] bg-white p-7">
+            <button onClick={() => setConfirmOpen(false)} className="absolute right-4 top-4 rounded-full p-1.5 hover:bg-surface" aria-label="Fermer">
               <X className="h-5 w-5" />
             </button>
-            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gold-400">
+            <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-br from-brand-400 to-brand-600 text-white">
               <CalendarCheck className="h-6 w-6" />
             </span>
-            <h2 className="mt-4 text-2xl font-extrabold">Confirmer votre réservation</h2>
-            <dl className="mt-4 space-y-2 rounded-2xl bg-sand p-4 text-sm">
-              <div className="flex justify-between"><dt className="text-muted">Enseignant</dt><dd className="font-bold">{teacher.name}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">Type</dt><dd className="font-bold">{type === "essai" ? "Cours d'essai" : "Cours"} · {duration} min</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">Date</dt><dd className="font-bold capitalize">{LONG_FMT.format(selected.day)} · {selected.time}</dd></div>
-              <div className="flex justify-between"><dt className="text-muted">Prix</dt><dd className="font-bold">{price === 0 ? "Gratuit" : `${price} €`}</dd></div>
+            <h2 className="mt-4 text-2xl font-extrabold">Encore une étape</h2>
+            <dl className="mt-4 space-y-2 rounded-2xl bg-surface p-4 text-sm">
+              <div className="flex justify-between gap-4"><dt className="text-muted">Enseignant</dt><dd className="font-bold">{teacher.name}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-muted">Type</dt><dd className="font-bold">{type === "essai" ? "Cours d'essai gratuit" : "Cours"} · {duration} min</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-muted">Date</dt><dd className="font-bold capitalize">{LONG_FMT.format(selected.day)} · {selected.time}</dd></div>
             </dl>
             <p className="mt-4 text-sm text-muted">
-              Pour réserver, connectez-vous ou créez votre compte élève. Le lien Google Meet vous sera ensuite envoyé par e-mail.
+              Créez votre compte en un clic pour confirmer. Le lien Google Meet vous sera envoyé par e-mail.
             </p>
-            <Link href="/inscription" className="mt-5 block rounded-xl bg-ink px-5 py-3.5 text-center font-bold text-white hover:bg-navy-700">
-              Continuer
+            <Link href="/inscription" className={`${btn.outline} mt-5 w-full`}>
+              <GoogleIcon /> Continuer avec Google
+            </Link>
+            <Link href="/inscription" className={`${btn.dark} mt-2 w-full`}>
+              Continuer avec mon e-mail
             </Link>
           </div>
         </div>

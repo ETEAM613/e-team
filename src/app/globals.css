@@ -1,37 +1,33 @@
 @import "tailwindcss";
 
 :root {
-  --background: #fbf8f2;
-  --foreground: #121a33;
+  --background: #f6f4ff;
+  --foreground: #0e0b26;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  /* Identité e-team : bleu nuit + or */
-  --color-ink: #121a33;
-  --color-navy-50: #eef1fa;
-  --color-navy-100: #dbe1f3;
-  --color-navy-200: #b7c2e6;
-  --color-navy-500: #3a4f9c;
-  --color-navy-700: #1f2d66;
-  --color-navy-900: #121a33;
+  /* Identité e-team : violet électrique + accents vifs */
+  --color-ink: #0e0b26;
+  --color-ink-soft: #1c1840;
+  --color-surface: #f6f4ff;
+  --color-line: #e7e3f5;
+  --color-muted: #6b6787;
 
-  --color-gold-50: #fdf7e8;
-  --color-gold-100: #faeac2;
-  --color-gold-300: #f2c95c;
-  --color-gold-400: #ebb534;
-  --color-gold-500: #d99a12;
-  --color-gold-700: #94650a;
-
-  --color-cream: #fbf8f2;
-  --color-sand: #f3ede1;
-  --color-line: #e6e0d4;
-  --color-muted: #5d6478;
+  --color-brand-50: #f3f0ff;
+  --color-brand-100: #e6e0ff;
+  --color-brand-200: #cfc4ff;
+  --color-brand-300: #b09dff;
+  --color-brand-400: #8b6dff;
+  --color-brand-500: #6d4aff;
+  --color-brand-600: #5a33f0;
+  --color-brand-700: #4520c9;
+  --color-brand-900: #1f0f66;
 
   --font-sans: var(--font-jakarta);
-  --font-display: var(--font-jakarta);
+  --font-display: var(--font-bricolage);
 }
 
 body {
@@ -40,14 +36,22 @@ body {
   font-family: var(--font-jakarta), system-ui, sans-serif;
 }
 
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-bricolage), var(--font-jakarta), system-ui, sans-serif;
+  letter-spacing: -0.02em;
+}
+
 ::selection {
-  background: var(--color-gold-300);
-  color: var(--color-ink);
+  background: #cfc4ff;
+  color: #0e0b26;
 }
 
 .container-page {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1240px;
   margin-inline: auto;
   padding-inline: 1rem;
 }
@@ -55,5 +59,67 @@ body {
 @media (min-width: 640px) {
   .container-page {
     padding-inline: 1.5rem;
+  }
+}
+
+/* Fond « mesh » coloré pour les sections sombres */
+.mesh-dark {
+  background-color: #0e0b26;
+  background-image:
+    radial-gradient(at 12% 18%, rgba(109, 74, 255, 0.55) 0, transparent 45%),
+    radial-gradient(at 88% 12%, rgba(255, 61, 139, 0.4) 0, transparent 42%),
+    radial-gradient(at 75% 90%, rgba(255, 138, 61, 0.35) 0, transparent 45%),
+    radial-gradient(at 20% 95%, rgba(20, 200, 180, 0.3) 0, transparent 40%);
+}
+
+.mesh-light {
+  background-color: #f6f4ff;
+  background-image:
+    radial-gradient(at 0% 0%, rgba(109, 74, 255, 0.12) 0, transparent 40%),
+    radial-gradient(at 100% 0%, rgba(255, 61, 139, 0.1) 0, transparent 40%),
+    radial-gradient(at 100% 100%, rgba(20, 200, 180, 0.1) 0, transparent 40%);
+}
+
+.text-gradient {
+  background: linear-gradient(90deg, #b09dff 0%, #ff7ab6 50%, #ffb26b 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+@keyframes pulse-ring {
+  0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.55); }
+  100% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+}
+
+.live-dot {
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 9999px;
+  background: #22c55e;
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot,
+  .animate-float {
+    animation: none;
   }
 }
