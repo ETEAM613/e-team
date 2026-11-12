@@ -23,12 +23,17 @@ export const metadata: Metadata = {
   },
   description:
     "Étudiez la Torah en direct avec un Rav ou une enseignante qualifiée. Premier cours gratuit, cours en direct gratuits, SOS 1:1 et binômes d'étude.",
+  // Version d'aperçu : ne pas apparaître dans Google tant que le site n'est pas lancé
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="fr" className={`${jakarta.variable} ${bricolage.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <div className="bg-amber-300 px-4 py-2 text-center text-xs font-bold text-ink sm:text-sm">
+          🚧 Version d&apos;aperçu — site en construction. Les enseignants, avis et chiffres affichés sont des exemples.
+        </div>
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
