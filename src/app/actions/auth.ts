@@ -13,7 +13,7 @@ import {
 } from "@/lib/server/auth";
 import { execute, query } from "@/lib/server/db";
 import { migrate } from "@/lib/server/migrate";
-import { sendMail, siteUrl } from "@/lib/server/mail";
+import { notify, siteUrl } from "@/lib/server/mail";
 
 export type FormState = { error?: string; ok?: string; fields?: Record<string, string> } | undefined;
 
@@ -52,6 +52,17 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
     [id, d.email, await hashPassword(d.password), d.firstName, d.lastName, d.gender, role],
   );
   await createSession(id);
+  await notify(
+    d.email,
+    "Bienvenue sur e-team !",
+    `Bonjour ${d.firstName},
+
+Votre compte e-team est créé. Votre premier cours est offert : choisissez votre enseignant ici :
+${siteUrl()}/enseignants
+
+À très vite,
+L'équipe e-team`,
+  );
 
   if (d.role === "enseignant") redirect("/espace-enseignant");
   if (d.role === "parent") redirect("/mon-compte#enfants");
@@ -99,7 +110,7 @@ export async function requestPasswordReset(_: FormState, formData: FormData): Pr
     rows[0].id,
     new Date(Date.now() + 3600 * 1000),
   ]);
-  await sendMail(
+  await notify(
     email,
     "Réinitialiser votre mot de passe e-team",
     `Bonjour ${rows[0].first_name},\n\nPour choisir un nouveau mot de passe, ouvrez ce lien (valable 1 heure) :\n${siteUrl()}/reinitialiser?jeton=${token}\n\nSi vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.\n\nL'équipe e-team`,

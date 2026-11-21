@@ -7,6 +7,7 @@ import { requireAdmin, requireUser } from "@/lib/server/auth";
 import { execute, query } from "@/lib/server/db";
 import { getTeacherRowByUser } from "@/lib/server/teachers";
 import { LANGUAGES, MOMENTS, SUBJECTS } from "@/lib/data";
+import { adminEmails, notify, siteUrl } from "@/lib/server/mail";
 import type { FormState } from "./auth";
 
 /* ---------- Comptes parents : enfants ---------- */
@@ -111,6 +112,16 @@ export async function saveTeacherProfile(_: FormState, formData: FormData): Prom
       [randomUUID(), user.id, slug, ...values, user.gender, submit ? "pending" : "draft", gradients[Math.floor(Math.random() * gradients.length)]],
     );
   }
+  if (submit && existing?.status !== "approved" && existing?.status !== "pending") {
+    await notify(
+      adminEmails(),
+      "Nouveau profil enseignant à vérifier",
+      `${d.displayName} (${user.email}) a envoyé son profil enseignant.
+
+Vérifiez-le ici :
+${siteUrl()}/admin`,
+    );
+  }
   revalidatePath("/espace-enseignant");
   return {
     ok:
@@ -140,6 +151,32 @@ export async function setTeacherStatus(profileId: string, status: "approved" | "
     status,
     profileId,
   ]);
+  const [t] = await query<{ email: string | null; first_name: string | null; slug: string }>(
+    "SELECT u.email, u.first_name, t.slug FROM teacher_profiles t LEFT JOIN users u ON u.id = t.user_id WHERE t.id = ?",
+    [profileId],
+  );
+  if (t?.email) {
+    await notify(
+      t.email,
+      status === "approved" ? "Votre profil e-team est en ligne !" : "Votre profil e-team n'a pas été validé",
+      status === "approved"
+        ? `Bonjour ${t.first_name},
+
+Bonne nouvelle : votre profil enseignant est validé et visible par les élèves.
+${siteUrl()}/enseignants/${t.slug}
+
+L'équipe e-team`
+        : `Bonjour ${t.first_name},
+
+Votre profil enseignant n'a pas été validé.${note ? `
+Motif : ${note}` : ""}
+
+Vous pouvez le modifier et le renvoyer ici :
+${siteUrl()}/espace-enseignant
+
+L'équipe e-team`,
+    );
+  }
   revalidatePath("/admin");
   revalidatePath("/enseignants");
 }
