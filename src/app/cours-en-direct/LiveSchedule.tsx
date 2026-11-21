@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { CalendarPlus, Clock, ShieldCheck, Users } from "lucide-react";
 import { getTeacher, LIVE_SESSIONS } from "@/lib/data";
-import { useGender } from "@/lib/profile";
+import type { Gender } from "@/lib/data";
 import Avatar from "@/components/Avatar";
 import { btn, chip } from "@/components/ui";
 
@@ -18,8 +18,7 @@ const startOfToday = () => {
   return d.getTime();
 };
 
-export default function LiveSchedule() {
-  const gender = useGender();
+export default function LiveSchedule({ gender }: { gender: Gender | null }) {
   const today = useSyncExternalStore(subscribeNoop, startOfToday, () => null);
   const [day, setDay] = useState<number | "all">("all");
 

@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import { BookOpen, GraduationCap, Users } from "lucide-react";
-import GoogleIcon from "@/components/GoogleIcon";
-import { SUBJECTS, type Gender } from "@/lib/data";
-import { setGender } from "@/lib/profile";
+import { signup } from "@/app/actions/auth";
+import type { Gender } from "@/lib/data";
+import FormError from "@/components/FormError";
 import { btn, input } from "@/components/ui";
 
 type Role = "eleve" | "parent" | "enseignant";
@@ -18,18 +17,8 @@ const ROLES: { value: Role; label: string; icon: typeof BookOpen; desc: string }
 ];
 
 export default function SignupForm({ initialRole, initialGender }: { initialRole: Role; initialGender: Gender | null }) {
-  const router = useRouter();
   const [role, setRole] = useState<Role>(initialRole);
-  const [gender, setG] = useState<Gender | null>(initialGender);
-
-  // Aperçu : le compte n'est pas encore enregistré (étape 2), mais le genre
-  // choisi adapte déjà tout le site (enseignants, cours en direct, SOS, binômes).
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!gender) return;
-    setGender(gender);
-    router.push("/enseignants");
-  };
+  const [state, action, pending] = useActionState(signup, undefined);
 
   return (
     <div className="w-full max-w-lg rounded-[2rem] border border-line bg-white p-7 shadow-2xl shadow-brand-500/10 sm:p-9">
@@ -55,7 +44,8 @@ export default function SignupForm({ initialRole, initialGender }: { initialRole
         ))}
       </div>
 
-      <form onSubmit={submit} className="mt-6 space-y-4">
+      <form action={action} className="mt-6 space-y-4">
+        <input type="hidden" name="role" value={role} />
         <fieldset>
           <legend className="mb-1.5 block text-sm font-bold">Je suis</legend>
           <div className="grid grid-cols-2 gap-2">
@@ -69,61 +59,60 @@ export default function SignupForm({ initialRole, initialGender }: { initialRole
               >
                 <input
                   type="radio"
-                  name="genre"
+                  name="gender"
+                  value={value}
                   required
-                  checked={gender === value}
-                  onChange={() => setG(value)}
+                  defaultChecked={initialGender === value}
                   className="accent-[var(--color-brand-500)]"
                 />
                 {label}
               </label>
             ))}
           </div>
-          {role === "parent" && <p className="mt-1.5 text-xs text-muted">Vous indiquerez le genre de chaque enfant en l&apos;ajoutant.</p>}
+          {role === "parent" && <p className="mt-1.5 text-xs text-muted">Vous ajouterez ensuite vos enfants depuis votre compte.</p>}
         </fieldset>
 
-        <button type="submit" className={`${btn.outline} w-full !py-3.5`}>
-          <GoogleIcon /> Continuer avec Google
-        </button>
-        <div className="flex items-center gap-3 text-xs font-semibold text-muted">
-          <span className="h-px flex-1 bg-line" /> ou avec votre e-mail <span className="h-px flex-1 bg-line" />
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-bold">Prénom</span>
+            <input name="firstName" required autoComplete="given-name" defaultValue={state?.fields?.firstName} className={input} />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-sm font-bold">Nom</span>
+            <input name="lastName" required autoComplete="family-name" defaultValue={state?.fields?.lastName} className={input} />
+          </label>
         </div>
 
         <label className="block">
-          <span className="mb-1.5 block text-sm font-bold">Prénom et nom</span>
-          <input autoComplete="name" className={input} />
-        </label>
-
-        {role === "enseignant" && (
-          <label className="block">
-            <span className="mb-1.5 block text-sm font-bold">Matière principale</span>
-            <select className={input} defaultValue="">
-              <option value="" disabled>Choisir…</option>
-              {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
-            </select>
-          </label>
-        )}
-
-        <label className="block">
           <span className="mb-1.5 block text-sm font-bold">E-mail</span>
-          <input type="email" autoComplete="email" className={input} placeholder="vous@exemple.com" />
+          <input
+            type="email"
+            name="email"
+            required
+            autoComplete="email"
+            defaultValue={state?.fields?.email}
+            className={input}
+            placeholder="vous@exemple.com"
+          />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm font-bold">Mot de passe</span>
-          <input type="password" minLength={8} autoComplete="new-password" className={input} />
+          <input type="password" name="password" required minLength={8} autoComplete="new-password" className={input} />
           <span className="mt-1 block text-xs text-muted">8 caractères minimum</span>
         </label>
 
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" required className="mt-1 accent-[var(--color-brand-500)]" />
+          <input type="checkbox" name="terms" required className="mt-1 accent-[var(--color-brand-500)]" />
           <span>J&apos;accepte les conditions d&apos;utilisation et la politique de confidentialité.</span>
         </label>
 
-        <button className={`${btn.primary} w-full !py-3.5`}>
-          {role === "enseignant" ? "Créer mon profil enseignant" : "Créer mon compte"}
+        <FormError state={state} />
+
+        <button disabled={pending} className={`${btn.primary} w-full !py-3.5`}>
+          {pending ? "Création du compte…" : role === "enseignant" ? "Créer mon compte enseignant" : "Créer mon compte"}
         </button>
         {role === "enseignant" && (
-          <p className="text-center text-xs text-muted">Votre profil sera vérifié (diplômes et antécédents) avant sa mise en ligne.</p>
+          <p className="text-center text-xs text-muted">Vous compléterez ensuite votre profil, vérifié par l&apos;équipe avant sa mise en ligne.</p>
         )}
       </form>
 

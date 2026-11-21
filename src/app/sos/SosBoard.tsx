@@ -3,16 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { CheckCircle2, Lock, Video, X, Zap } from "lucide-react";
-import { teachersFor, type Teacher } from "@/lib/data";
-import { useGender } from "@/lib/profile";
+import type { Teacher } from "@/lib/data";
 import Avatar from "@/components/Avatar";
 import { btn, chip } from "@/components/ui";
 
-export default function SosBoard() {
-  const gender = useGender();
+export default function SosBoard({ teachers }: { teachers: Teacher[] }) {
   const [calling, setCalling] = useState<Teacher | null>(null);
 
-  const online = teachersFor(gender).filter((t) => t.availableNow);
+  const online = teachers.filter((t) => t.availableNow);
 
   return (
     <>

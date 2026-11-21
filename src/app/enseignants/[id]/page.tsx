@@ -1,19 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import { BadgeCheck, BookOpen, ChevronLeft, GraduationCap, Languages, MapPin, Star, Users } from "lucide-react";
-import { getTeacher, TEACHERS } from "@/lib/data";
+import { getCurrentUser } from "@/lib/server/auth";
+import { getTeacherForViewer } from "@/lib/server/teachers";
 import Avatar from "@/components/Avatar";
-import ProfileGate from "@/components/ProfileGate";
+import Unavailable from "@/components/Unavailable";
 import { chip } from "@/components/ui";
 import BookingWidget from "./BookingWidget";
-
-// Toutes les fiches sont pré-générées : on accepte une navigation bloquante.
-export const instant = false;
-
-export function generateStaticParams() {
-  return TEACHERS.map((t) => ({ id: t.id }));
-}
 
 // Titre neutre : le nom n'est pas exposé aux profils qui n'ont pas accès à la fiche
 export const metadata: Metadata = { title: "Profil enseignant" };
@@ -25,9 +18,9 @@ const DEMO_REVIEWS = [
 
 export default async function TeacherPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const t = getTeacher(id);
-  if (!t) notFound();
-  const kidsTeacher = t.accepts.includes("garcon") || t.accepts.includes("fille");
+  const user = await getCurrentUser();
+  // Le serveur ne renvoie la fiche que si elle correspond au compte connecté.
+  const t = await getTeacherForViewer(id, user?.gender ?? null);
 
   return (
     <div className="container-page py-8">
@@ -36,7 +29,9 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
       </Link>
 
       <div className="mt-6">
-        <ProfileGate hideFor={kidsTeacher ? [] : [t.gender === "homme" ? "femme" : "homme"]}>
+        {!t ? (
+          <Unavailable />
+        ) : (
           <div className="grid gap-10 lg:grid-cols-[1fr_420px]">
             <div className="min-w-0">
               <div className="flex flex-col gap-6 rounded-[2rem] border border-line bg-white p-6 sm:flex-row sm:p-8">
@@ -124,7 +119,7 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
               <BookingWidget teacher={t} />
             </aside>
           </div>
-        </ProfileGate>
+        )}
       </div>
     </div>
   );

@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Radio } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import LiveSchedule from "./LiveSchedule";
+import { getCurrentUser } from "@/lib/server/auth";
 
 export const metadata: Metadata = { title: "Cours en direct" };
 
-export default function LivePage() {
+export default async function LivePage() {
+  const user = await getCurrentUser();
   return (
     <>
       <PageHero
@@ -16,7 +18,7 @@ export default function LivePage() {
         icon={<Radio className="h-7 w-7" />}
       />
       <div className="container-page py-10">
-        <LiveSchedule />
+        <LiveSchedule gender={user?.gender ?? null} />
       </div>
     </>
   );

@@ -2,10 +2,14 @@ import type { Metadata } from "next";
 import { Zap } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import SosBoard from "./SosBoard";
+import { getCurrentUser } from "@/lib/server/auth";
+import { listTeachers } from "@/lib/server/teachers";
 
 export const metadata: Metadata = { title: "SOS — un enseignant tout de suite" };
 
-export default function SosPage() {
+export default async function SosPage() {
+  const user = await getCurrentUser();
+  const teachers = await listTeachers(user?.gender ?? null);
   return (
     <>
       <PageHero
@@ -16,7 +20,7 @@ export default function SosPage() {
         icon={<Zap className="h-7 w-7 fill-white" />}
       />
       <div className="container-page py-10">
-        <SosBoard />
+        <SosBoard teachers={teachers} />
       </div>
     </>
   );

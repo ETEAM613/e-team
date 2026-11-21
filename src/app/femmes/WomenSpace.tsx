@@ -1,11 +1,10 @@
 import Link from "next/link";
 import { ArrowRight, CheckCircle2, Radio } from "lucide-react";
-import { getTeacher, LIVE_SESSIONS, TEACHERS } from "@/lib/data";
+import { getTeacher, LIVE_SESSIONS, type Teacher } from "@/lib/data";
 import TeacherCard from "@/components/TeacherCard";
 import { btn } from "@/components/ui";
 
-export default function WomenSpace() {
-  const teachers = TEACHERS.filter((t) => t.gender === "femme" && t.accepts.includes("femme"));
+export default function WomenSpace({ teachers, loggedIn }: { teachers: Teacher[]; loggedIn: boolean }) {
   const live = LIVE_SESSIONS.filter((s) => getTeacher(s.teacherId)?.gender === "femme");
 
   return (
@@ -43,9 +42,11 @@ export default function WomenSpace() {
         {teachers.map((t) => <TeacherCard key={t.id} teacher={t} />)}
       </div>
 
-      <div className="mt-12 text-center">
-        <Link href="/inscription?genre=femme" className={btn.primary}>Créer mon compte</Link>
-      </div>
+      {!loggedIn && (
+        <div className="mt-12 text-center">
+          <Link href="/inscription?genre=femme" className={btn.primary}>Créer mon compte</Link>
+        </div>
+      )}
     </>
   );
 }

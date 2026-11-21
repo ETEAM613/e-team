@@ -1,19 +1,18 @@
 import type { Metadata } from "next";
-import { Suspense } from "react";
 import TeacherSearch from "./TeacherSearch";
+import { getCurrentUser } from "@/lib/server/auth";
+import { listTeachers } from "@/lib/server/teachers";
 
 export const metadata: Metadata = {
   title: "Trouver un enseignant",
 };
 
-type SP = Promise<{ matiere?: string; public?: string }>;
-
-async function Results({ searchParams }: { searchParams: SP }) {
+export default async function TeachersPage({ searchParams }: { searchParams: Promise<{ matiere?: string; public?: string }> }) {
   const { matiere = "", public: pub = "" } = await searchParams;
-  return <TeacherSearch key={`${matiere}|${pub}`} initialSubject={matiere} initialPublic={pub} />;
-}
+  const user = await getCurrentUser();
+  // Tri fait côté serveur : un compte ne reçoit que les enseignants qui lui correspondent.
+  const teachers = await listTeachers(user?.gender ?? null);
 
-export default function TeachersPage({ searchParams }: { searchParams: SP }) {
   return (
     <>
       <section className="mesh-light border-b border-line">
@@ -25,9 +24,13 @@ export default function TeachersPage({ searchParams }: { searchParams: SP }) {
         </div>
       </section>
       <div className="container-page py-8">
-        <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-white" />}>
-          <Results searchParams={searchParams} />
-        </Suspense>
+        <TeacherSearch
+          key={`${matiere}|${pub}`}
+          teachers={teachers}
+          gender={user?.gender ?? null}
+          initialSubject={matiere}
+          initialPublic={pub}
+        />
       </div>
     </>
   );

@@ -4,14 +4,13 @@ import Link from "next/link";
 import { useState } from "react";
 import { BadgeCheck, Clock, MapPin, MessageCircle, Plus } from "lucide-react";
 import { BINOME_REQUESTS, MOMENTS, SUBJECTS } from "@/lib/data";
-import { useGender } from "@/lib/profile";
+import type { Gender } from "@/lib/data";
 import DemoForm from "@/components/DemoForm";
 import { btn, chip, input } from "@/components/ui";
 
 const momentLabel = (m: string) => MOMENTS.find((x) => x.value === m)?.label ?? m;
 
-export default function BinomeBoard() {
-  const gender = useGender();
+export default function BinomeBoard({ gender }: { gender: Gender | null }) {
   const [subject, setSubject] = useState("");
   const [showForm, setShowForm] = useState(false);
 

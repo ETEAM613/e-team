@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import { HeartHandshake } from "lucide-react";
 import PageHero from "@/components/PageHero";
-import ProfileGate from "@/components/ProfileGate";
+import Unavailable from "@/components/Unavailable";
+import { getCurrentUser } from "@/lib/server/auth";
+import { listTeachers } from "@/lib/server/teachers";
 import WomenSpace from "./WomenSpace";
 
 export const metadata: Metadata = { title: "Espace Femmes" };
 
-export default function WomenPage() {
+export default async function WomenPage() {
+  const user = await getCurrentUser();
+  const isMan = user?.gender === "homme";
+  const teachers = isMan ? [] : (await listTeachers("femme")).filter((t) => t.accepts.includes("femme"));
   return (
     <>
       <PageHero
@@ -17,9 +22,7 @@ export default function WomenPage() {
         icon={<HeartHandshake className="h-7 w-7" />}
       />
       <div className="container-page py-10">
-        <ProfileGate hideFor={["homme"]}>
-          <WomenSpace />
-        </ProfileGate>
+        {isMan ? <Unavailable /> : <WomenSpace teachers={teachers} loggedIn={!!user} />}
       </div>
     </>
   );

@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Search, SlidersHorizontal, Zap } from "lucide-react";
-import { LANGUAGES, MOMENTS, SUBJECTS, TEACHERS, teachersFor } from "@/lib/data";
-import { useGender } from "@/lib/profile";
+import { LANGUAGES, MOMENTS, SUBJECTS, type Gender, type Teacher } from "@/lib/data";
 import TeacherCard from "@/components/TeacherCard";
 import { input } from "@/components/ui";
 
@@ -25,8 +24,17 @@ const PUBLICS = [
   { value: "enfants", label: "Enfants" },
 ];
 
-export default function TeacherSearch({ initialSubject, initialPublic }: { initialSubject: string; initialPublic: string }) {
-  const gender = useGender();
+export default function TeacherSearch({
+  teachers,
+  gender,
+  initialSubject,
+  initialPublic,
+}: {
+  teachers: Teacher[];
+  gender: Gender | null;
+  initialSubject: string;
+  initialPublic: string;
+}) {
   const [subject, setSubject] = useState(initialSubject);
   const [level, setLevel] = useState("");
   const [moment, setMoment] = useState("");
@@ -38,8 +46,8 @@ export default function TeacherSearch({ initialSubject, initialPublic }: { initi
 
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const base = gender ? teachersFor(gender) : TEACHERS;
-    const list = base.filter(
+    // La liste reçue est déjà triée par le serveur selon le compte connecté.
+    const list = teachers.filter(
       (t) =>
         (gender ||
           !pub ||
@@ -59,7 +67,7 @@ export default function TeacherSearch({ initialSubject, initialPublic }: { initi
     else if (sort === "experience") sorted.sort((a, b) => b.lessons - a.lessons);
     else sorted.sort((a, b) => b.rating * Math.log(b.reviews) - a.rating * Math.log(a.reviews));
     return sorted;
-  }, [gender, pub, subject, level, moment, language, nowOnly, query, sort]);
+  }, [teachers, gender, pub, subject, level, moment, language, nowOnly, query, sort]);
 
   const reset = () => {
     setSubject("");

@@ -1,8 +1,5 @@
-"use client";
-
 import Link from "next/link";
 import { ArrowUpRight, Baby, HeartHandshake, Lock, Radio, Search, Users, Zap } from "lucide-react";
-import { useGender } from "@/lib/profile";
 
 function Tag({ children, dark = false }: { children: React.ReactNode; dark?: boolean }) {
   return (
@@ -25,8 +22,7 @@ function Arrow() {
 }
 
 /** Les 5 modules de la page d'accueil (cahier des charges §1). */
-export default function ModulesGrid() {
-  const hideWomen = useGender() === "homme";
+export default function ModulesGrid({ hideWomen = false }: { hideWomen?: boolean }) {
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

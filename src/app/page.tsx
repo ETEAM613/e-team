@@ -21,11 +21,13 @@ import {
 } from "lucide-react";
 import { FAQ, TESTIMONIALS, TRANSPARENCY } from "@/lib/data";
 import ModulesGrid from "@/components/ModulesGrid";
+import { getCurrentUser } from "@/lib/server/auth";
 import { btn, eyebrow } from "@/components/ui";
 
 const eur = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 });
 
-export default function Home() {
+export default async function Home() {
+  const user = await getCurrentUser();
   return (
     <>
       {/* HERO */}
@@ -113,7 +115,7 @@ export default function Home() {
 
       {/* 5 MODULES */}
       <section className="container-page relative -mt-14 lg:-mt-20">
-        <ModulesGrid />
+        <ModulesGrid hideWomen={user?.gender === "homme"} />
       </section>
 
       {/* BINÔME */}

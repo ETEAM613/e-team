@@ -5,7 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Heart, Menu, X } from "lucide-react";
 import Logo from "./Logo";
-import { setGender, useGender } from "@/lib/profile";
+import { logout } from "@/app/actions/auth";
+import type { Gender } from "@/lib/data";
+
+export type HeaderUser = { firstName: string; gender: Gender; role: string } | null;
 import { btn } from "./ui";
 
 type NavItem = { href: string; label: string; badge?: "live" | "sos"; womenOnly?: boolean };
@@ -19,10 +22,10 @@ const NAV: NavItem[] = [
   { href: "/femmes", label: "Femmes", womenOnly: true },
 ];
 
-export default function Header() {
+export default function Header({ user }: { user: HeaderUser }) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const gender = useGender();
+  const gender = user?.gender ?? null;
   // L'espace Femmes n'apparaît pas pour un compte homme
   const items = NAV.filter((i) => !(i.womenOnly && gender === "homme"));
 
@@ -57,12 +60,20 @@ export default function Header() {
           >
             <Heart className="h-4 w-4 fill-white" /> Faire un don
           </Link>
-          {gender ? (
+          {user ? (
             <>
-              <span className="rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700">Mon compte</span>
-              <button onClick={() => setGender(null)} className="rounded-full px-4 py-2 text-sm font-semibold text-muted hover:bg-surface">
-                Déconnexion
-              </button>
+              {user.role === "admin" && (
+                <Link href="/admin" className="rounded-full px-4 py-2 text-sm font-bold text-ink hover:bg-surface">Admin</Link>
+              )}
+              <Link
+                href={user.role === "enseignant" ? "/espace-enseignant" : "/mon-compte"}
+                className="rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-100"
+              >
+                {user.firstName}
+              </Link>
+              <form action={logout}>
+                <button className="rounded-full px-4 py-2 text-sm font-semibold text-muted hover:bg-surface">Déconnexion</button>
+              </form>
             </>
           ) : (
             <>
@@ -110,10 +121,19 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            {gender ? (
-              <button onClick={() => { setGender(null); setOpen(false); }} className={`${btn.outline} mt-3`}>
-                Déconnexion
-              </button>
+            {user ? (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Link
+                  href={user.role === "admin" ? "/admin" : user.role === "enseignant" ? "/espace-enseignant" : "/mon-compte"}
+                  onClick={() => setOpen(false)}
+                  className={btn.dark}
+                >
+                  {user.role === "admin" ? "Admin" : "Mon compte"}
+                </Link>
+                <form action={logout}>
+                  <button className={`${btn.outline} w-full`}>Déconnexion</button>
+                </form>
+              </div>
             ) : (
               <div className="mt-3 grid grid-cols-2 gap-2">
                 <Link href="/connexion" onClick={() => setOpen(false)} className={btn.outline}>

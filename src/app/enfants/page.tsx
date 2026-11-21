@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Baby } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import ChildrenSpace from "./ChildrenSpace";
+import { listKidsTeachers } from "@/lib/server/teachers";
 
 export const metadata: Metadata = { title: "Espace Enfants" };
 
-export default function ChildrenPage() {
+export default async function ChildrenPage() {
+  const teachers = await listKidsTeachers();
   return (
     <>
       <PageHero
@@ -17,7 +19,7 @@ export default function ChildrenPage() {
         dark
       />
       <div className="container-page py-10">
-        <ChildrenSpace />
+        <ChildrenSpace allTeachers={teachers} />
       </div>
     </>
   );

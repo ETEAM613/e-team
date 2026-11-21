@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import { Users } from "lucide-react";
 import PageHero from "@/components/PageHero";
 import BinomeBoard from "./BinomeBoard";
+import { getCurrentUser } from "@/lib/server/auth";
 
 export const metadata: Metadata = { title: "Binôme — partenaire d'étude" };
 
-export default function BinomePage() {
+export default async function BinomePage() {
+  const user = await getCurrentUser();
   return (
     <>
       <PageHero
@@ -16,7 +18,7 @@ export default function BinomePage() {
         icon={<Users className="h-7 w-7" />}
       />
       <div className="container-page py-10">
-        <BinomeBoard />
+        <BinomeBoard gender={user?.gender ?? null} />
       </div>
     </>
   );

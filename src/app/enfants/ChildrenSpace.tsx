@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { ClipboardList, ShieldCheck, UserPlus } from "lucide-react";
-import { kidsTeachers } from "@/lib/data";
+import type { Teacher } from "@/lib/data";
 import TeacherCard from "@/components/TeacherCard";
 import { btn } from "@/components/ui";
 
@@ -13,9 +13,9 @@ const FILTERS = [
   { value: "fille" as const, label: "Filles" },
 ];
 
-export default function ChildrenSpace() {
+export default function ChildrenSpace({ allTeachers }: { allTeachers: Teacher[] }) {
   const [child, setChild] = useState<"garcon" | "fille" | null>(null);
-  const teachers = kidsTeachers(child);
+  const teachers = allTeachers.filter((t) => (child ? t.accepts.includes(child) : true));
 
   return (
     <>
