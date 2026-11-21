@@ -4,8 +4,7 @@ import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { CalendarPlus, Clock, ShieldCheck, Users } from "lucide-react";
 import { getTeacher, LIVE_SESSIONS } from "@/lib/data";
-import { useAudience } from "@/lib/audience";
-import AudiencePicker, { AudienceSwitch } from "@/components/AudiencePicker";
+import { useGender } from "@/lib/profile";
 import Avatar from "@/components/Avatar";
 import { btn, chip } from "@/components/ui";
 
@@ -20,7 +19,7 @@ const startOfToday = () => {
 };
 
 export default function LiveSchedule() {
-  const audience = useAudience();
+  const gender = useGender();
   const today = useSyncExternalStore(subscribeNoop, startOfToday, () => null);
   const [day, setDay] = useState<number | "all">("all");
 
@@ -33,16 +32,13 @@ export default function LiveSchedule() {
     });
   }, [today]);
 
-  if (!audience) return <AudiencePicker title="Quels cours vous intéressent ?" />;
-
-  const sessions = LIVE_SESSIONS.filter((s) => s.audience.includes(audience))
+  const sessions = LIVE_SESSIONS.filter((s) => !gender || getTeacher(s.teacherId)?.gender === gender)
     .filter((s) => day === "all" || s.dayOffset === day)
     .sort((a, b) => a.dayOffset - b.dayOffset || a.time.localeCompare(b.time));
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <AudienceSwitch />
         <p className="flex items-center gap-1.5 text-sm text-muted">
           <ShieldCheck className="h-4 w-4 text-teal-600" /> Chaque cours est validé par l&apos;équipe avant publication
         </p>

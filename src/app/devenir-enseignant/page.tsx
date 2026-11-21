@@ -12,7 +12,7 @@ const BENEFITS = [
   { icon: Video, title: "Zéro organisation", text: "Lien Google Meet, e-mails de confirmation et rappels envoyés automatiquement.", c: "from-sky-400 to-blue-600" },
   { icon: Radio, title: "Cours en direct", text: "Proposez des cours de groupe gratuits : publiés après validation par l'équipe.", c: "from-teal-400 to-cyan-600" },
   { icon: Globe, title: "Des élèves partout", text: "France, Israël, Belgique, Canada… des élèves motivés du monde entier.", c: "from-pink-400 to-rose-500" },
-  { icon: BadgeCheck, title: "Un cadre sérieux", text: "Tous les enseignants sont vérifiés. Hommes et femmes strictement séparés.", c: "from-amber-400 to-orange-500" },
+  { icon: BadgeCheck, title: "Un cadre sérieux", text: "Tous les enseignants sont vérifiés par l'équipe e-team.", c: "from-amber-400 to-orange-500" },
 ];
 
 const STEPS = [

@@ -5,8 +5,8 @@ import TeacherCard from "@/components/TeacherCard";
 import { btn } from "@/components/ui";
 
 export default function WomenSpace() {
-  const teachers = TEACHERS.filter((t) => t.accepts.includes("femme"));
-  const live = LIVE_SESSIONS.filter((s) => s.audience.includes("femme"));
+  const teachers = TEACHERS.filter((t) => t.gender === "femme" && t.accepts.includes("femme"));
+  const live = LIVE_SESSIONS.filter((s) => getTeacher(s.teacherId)?.gender === "femme");
 
   return (
     <>
@@ -44,7 +44,7 @@ export default function WomenSpace() {
       </div>
 
       <div className="mt-12 text-center">
-        <Link href="/enseignants" className={btn.primary}>Trouver mon enseignante</Link>
+        <Link href="/inscription?genre=femme" className={btn.primary}>Créer mon compte</Link>
       </div>
     </>
   );

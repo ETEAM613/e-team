@@ -1,21 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, ClipboardList, ShieldCheck, UserPlus } from "lucide-react";
-import { teachersFor } from "@/lib/data";
-import { setAudience, useAudience } from "@/lib/audience";
+import { useState } from "react";
+import { ClipboardList, ShieldCheck, UserPlus } from "lucide-react";
+import { kidsTeachers } from "@/lib/data";
 import TeacherCard from "@/components/TeacherCard";
 import { btn } from "@/components/ui";
 
-const CHILDREN = [
-  { value: "garcon" as const, label: "Mon fils", desc: "Enseignants acceptant les garçons", tone: "from-sky-500 to-blue-600" },
-  { value: "fille" as const, label: "Ma fille", desc: "Enseignantes acceptant les filles", tone: "from-pink-500 to-rose-500" },
+const FILTERS = [
+  { value: null, label: "Tous" },
+  { value: "garcon" as const, label: "Garçons" },
+  { value: "fille" as const, label: "Filles" },
 ];
 
 export default function ChildrenSpace() {
-  const audience = useAudience();
-  const child = audience === "garcon" || audience === "fille" ? audience : null;
-  const teachers = teachersFor(child);
+  const [child, setChild] = useState<"garcon" | "fille" | null>(null);
+  const teachers = kidsTeachers(child);
 
   return (
     <>
@@ -35,32 +35,25 @@ export default function ChildrenSpace() {
         ))}
       </div>
 
-      <h2 className="mt-14 text-3xl font-extrabold">Je cherche un cours pour…</h2>
-      <div className="mt-5 grid gap-3 sm:grid-cols-2">
-        {CHILDREN.map((c) => (
-          <button
-            key={c.value}
-            onClick={() => setAudience(c.value)}
-            className={`flex items-center gap-4 rounded-[1.5rem] border-2 p-5 text-left transition ${
-              child === c.value ? "border-brand-500 bg-brand-50" : "border-line bg-white hover:border-brand-300"
-            }`}
-          >
-            <span className={`grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br text-white ${c.tone}`}>
-              <BookOpen className="h-7 w-7" />
-            </span>
-            <span>
-              <span className="block text-xl font-extrabold">{c.label}</span>
-              <span className="block text-sm text-muted">{c.desc}</span>
-            </span>
-          </button>
-        ))}
-      </div>
-
-      {child && (
-        <div className="mt-8 space-y-4">
-          {teachers.map((t) => <TeacherCard key={t.id} teacher={t} />)}
+      <div className="mt-14 flex flex-wrap items-center justify-between gap-3">
+        <h2 className="text-3xl font-extrabold">Nos enseignants pour les enfants</h2>
+        <div className="flex gap-2">
+          {FILTERS.map((f) => (
+            <button
+              key={f.label}
+              onClick={() => setChild(f.value)}
+              className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+                child === f.value ? "bg-ink text-white" : "bg-white ring-1 ring-line hover:ring-ink"
+              }`}
+            >
+              {f.label}
+            </button>
+          ))}
         </div>
-      )}
+      </div>
+      <div className="mt-6 space-y-4">
+        {teachers.map((t) => <TeacherCard key={t.id} teacher={t} />)}
+      </div>
 
       <div className="mt-12 flex flex-col items-start gap-4 rounded-[2rem] bg-ink p-8 text-white sm:flex-row sm:items-center sm:justify-between">
         <div>

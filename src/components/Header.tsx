@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Heart, Menu, X } from "lucide-react";
 import Logo from "./Logo";
-import { useAudience } from "@/lib/audience";
+import { setGender, useGender } from "@/lib/profile";
 import { btn } from "./ui";
 
 type NavItem = { href: string; label: string; badge?: "live" | "sos"; womenOnly?: boolean };
@@ -22,9 +22,9 @@ const NAV: NavItem[] = [
 export default function Header() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const audience = useAudience();
-  // L'espace Femmes est caché aux hommes
-  const items = NAV.filter((i) => !(i.womenOnly && audience === "homme"));
+  const gender = useGender();
+  // L'espace Femmes n'apparaît pas pour un compte homme
+  const items = NAV.filter((i) => !(i.womenOnly && gender === "homme"));
 
   return (
     <header className="sticky top-0 z-40 border-b border-line/70 bg-white/80 backdrop-blur-xl">
@@ -57,12 +57,23 @@ export default function Header() {
           >
             <Heart className="h-4 w-4 fill-white" /> Faire un don
           </Link>
-          <Link href="/connexion" className="rounded-full px-4 py-2 text-sm font-semibold text-ink hover:bg-surface">
-            Connexion
-          </Link>
-          <Link href="/inscription" className={`${btn.dark} !px-5 !py-2 text-sm`}>
-            S&apos;inscrire
-          </Link>
+          {gender ? (
+            <>
+              <span className="rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700">Mon compte</span>
+              <button onClick={() => setGender(null)} className="rounded-full px-4 py-2 text-sm font-semibold text-muted hover:bg-surface">
+                Déconnexion
+              </button>
+            </>
+          ) : (
+            <>
+              <Link href="/connexion" className="rounded-full px-4 py-2 text-sm font-semibold text-ink hover:bg-surface">
+                Connexion
+              </Link>
+              <Link href="/inscription" className={`${btn.dark} !px-5 !py-2 text-sm`}>
+                S&apos;inscrire
+              </Link>
+            </>
+          )}
         </div>
 
         <div className="flex items-center gap-2 xl:hidden">
@@ -99,14 +110,20 @@ export default function Header() {
                 {item.label}
               </Link>
             ))}
-            <div className="mt-3 grid grid-cols-2 gap-2">
-              <Link href="/connexion" onClick={() => setOpen(false)} className={btn.outline}>
-                Connexion
-              </Link>
-              <Link href="/inscription" onClick={() => setOpen(false)} className={btn.dark}>
-                S&apos;inscrire
-              </Link>
-            </div>
+            {gender ? (
+              <button onClick={() => { setGender(null); setOpen(false); }} className={`${btn.outline} mt-3`}>
+                Déconnexion
+              </button>
+            ) : (
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Link href="/connexion" onClick={() => setOpen(false)} className={btn.outline}>
+                  Connexion
+                </Link>
+                <Link href="/inscription" onClick={() => setOpen(false)} className={btn.dark}>
+                  S&apos;inscrire
+                </Link>
+              </div>
+            )}
           </nav>
         </div>
       )}

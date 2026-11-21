@@ -13,14 +13,13 @@ import {
   Mail,
   Radio,
   Search,
-  ShieldCheck,
   Sparkles,
   Star,
   Users,
   Video,
   Zap,
 } from "lucide-react";
-import { AUDIENCES, FAQ, SUBJECTS, TESTIMONIALS, TRANSPARENCY } from "@/lib/data";
+import { FAQ, TESTIMONIALS, TRANSPARENCY } from "@/lib/data";
 import ModulesGrid from "@/components/ModulesGrid";
 import { btn, eyebrow } from "@/components/ui";
 
@@ -44,35 +43,19 @@ export default function Home() {
               SOS en 1:1 et binômes d&apos;étude.
             </p>
 
-            <form action="/enseignants" className="mt-9 flex flex-col gap-2 rounded-[1.75rem] bg-white p-2 text-ink shadow-2xl shadow-brand-900/40 sm:flex-row">
-              <label className="flex flex-1 flex-col rounded-2xl px-4 py-2 hover:bg-surface">
-                <span className="text-xs font-bold text-muted">Je veux étudier</span>
-                <select name="matiere" className="bg-transparent font-bold outline-none" defaultValue="">
-                  <option value="">Toutes les matières</option>
-                  {SUBJECTS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
-                  ))}
-                </select>
-              </label>
-              <div className="hidden w-px bg-line sm:block" />
-              <label className="flex flex-1 flex-col rounded-2xl px-4 py-2 hover:bg-surface">
-                <span className="text-xs font-bold text-muted">Pour qui ?</span>
-                <select name="pour" className="bg-transparent font-bold outline-none" defaultValue="">
-                  <option value="" disabled>Choisir…</option>
-                  {AUDIENCES.map((a) => (
-                    <option key={a.value} value={a.value}>{a.label}</option>
-                  ))}
-                </select>
-              </label>
-              <button className={`${btn.primary} !py-4 sm:!px-8`}>
-                <Search className="h-5 w-5" /> Rechercher
-              </button>
-            </form>
+            <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <Link href="/enseignants" className={`${btn.primary} !px-8 !py-4 text-lg`}>
+                <Search className="h-5 w-5" /> Je recherche un enseignant
+              </Link>
+              <Link href="/cours-en-direct" className={`${btn.ghostLight} !py-4`}>
+                <Radio className="h-5 w-5" /> Cours en direct gratuits
+              </Link>
+            </div>
 
             <ul className="mt-7 flex flex-wrap gap-x-6 gap-y-2 text-sm text-white/75">
               <li className="flex items-center gap-2"><BadgeCheck className="h-4 w-4 text-brand-300" /> Enseignants vérifiés</li>
               <li className="flex items-center gap-2"><Video className="h-4 w-4 text-brand-300" /> Lien Meet automatique</li>
-              <li className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-brand-300" /> Hommes et femmes séparés</li>
+              <li className="flex items-center gap-2"><Gift className="h-4 w-4 text-brand-300" /> 1er cours gratuit</li>
             </ul>
           </div>
 

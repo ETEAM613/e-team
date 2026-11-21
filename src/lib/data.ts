@@ -1,15 +1,11 @@
 // Données de démonstration. Elles seront remplacées par la base de données
 // à l'étape suivante (profils réels, cours, binômes, cagnotte).
 
-/** Pour qui est le cours : l'élève lui-même (homme/femme) ou son enfant (garçon/fille). */
+/** Publics qu'un enseignant accepte : adultes (homme/femme) et enfants (garçon/fille). */
 export type Audience = "homme" | "femme" | "garcon" | "fille";
 
-export const AUDIENCES: { value: Audience; label: string; short: string; desc: string }[] = [
-  { value: "homme", label: "Pour moi — je suis un homme", short: "Homme", desc: "Rabbanim et Avrekhim" },
-  { value: "femme", label: "Pour moi — je suis une femme", short: "Femme", desc: "Enseignantes qualifiées" },
-  { value: "garcon", label: "Pour mon fils", short: "Mon fils", desc: "Enseignants acceptant les garçons" },
-  { value: "fille", label: "Pour ma fille", short: "Ma fille", desc: "Enseignantes acceptant les filles" },
-];
+/** Genre indiqué à l'inscription : il détermine ce que l'utilisateur voit sur tout le site. */
+export type Gender = "homme" | "femme";
 
 export type Moment = "matin" | "apres-midi" | "soir";
 
@@ -18,7 +14,7 @@ export type Teacher = {
   name: string;
   title: string;
   gender: "homme" | "femme";
-  /** Publics acceptés par l'enseignant (séparation stricte appliquée côté serveur à l'étape 2). */
+  /** Publics acceptés par l'enseignant. */
   accepts: Audience[];
   subjects: string[];
   languages: string[];
@@ -246,9 +242,21 @@ export function getTeacher(id: string) {
   return TEACHERS.find((t) => t.id === id);
 }
 
-export function teachersFor(audience: Audience | null) {
-  if (!audience) return [];
-  return TEACHERS.filter((t) => t.accepts.includes(audience));
+const teachesKids = (t: Teacher) => t.accepts.includes("garcon") || t.accepts.includes("fille");
+
+/** Enseignants visibles : tous avant l'inscription, puis uniquement ceux du même genre que le compte. */
+export function teachersFor(gender: Gender | null) {
+  return gender ? TEACHERS.filter((t) => t.gender === gender) : TEACHERS;
+}
+
+/** Une fiche est visible si elle correspond au compte, ou si l'enseignant prend des enfants (réservation parent). */
+export function canSeeTeacher(t: Teacher, gender: Gender | null) {
+  return !gender || t.gender === gender || teachesKids(t);
+}
+
+/** Enseignants de l'espace Enfants, éventuellement filtrés par genre de l'enfant. */
+export function kidsTeachers(child: "garcon" | "fille" | null) {
+  return TEACHERS.filter((t) => (child ? t.accepts.includes(child) : teachesKids(t)));
 }
 
 /** Cours en direct : sessions de groupe gratuites, validées par l'admin, jusqu'à 7 jours à l'avance. */
@@ -346,8 +354,8 @@ export const FAQ = [
     a: "En visio sur Google Meet. Dès qu'un cours est confirmé, le lien est créé automatiquement et envoyé par e-mail à l'élève et à l'enseignant. Il apparaît aussi dans votre tableau de bord.",
   },
   {
-    q: "Les hommes et les femmes sont-ils séparés ?",
-    a: "Oui, strictement. Les hommes ne voient que les enseignants et élèves masculins, les femmes que les enseignantes et élèves féminines. L'espace Femmes est invisible pour les hommes.",
+    q: "Avec qui vais-je étudier ?",
+    a: "Les femmes étudient avec des enseignantes, les hommes avec des Rabbanim et des enseignants. Il suffit de l'indiquer une fois à l'inscription : le site s'adapte ensuite automatiquement.",
   },
   {
     q: "Comment sont choisis les enseignants ?",

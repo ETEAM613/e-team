@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { Search, ShieldCheck, SlidersHorizontal, Zap } from "lucide-react";
-import { AUDIENCES, LANGUAGES, MOMENTS, SUBJECTS, teachersFor, type Audience } from "@/lib/data";
-import { setAudience, useAudience } from "@/lib/audience";
+import { useMemo, useState } from "react";
+import { Search, SlidersHorizontal, Zap } from "lucide-react";
+import { LANGUAGES, MOMENTS, SUBJECTS, TEACHERS, teachersFor } from "@/lib/data";
+import { useGender } from "@/lib/profile";
 import TeacherCard from "@/components/TeacherCard";
-import AudiencePicker, { AudienceSwitch } from "@/components/AudiencePicker";
 import { input } from "@/components/ui";
 
 const SORTS = [
@@ -15,33 +14,42 @@ const SORTS = [
   { value: "experience", label: "Plus d'expérience" },
 ];
 
-export default function TeacherSearch({
-  initialSubject,
-  initialAudience,
-}: {
-  initialSubject: string;
-  initialAudience: string;
-}) {
-  const audience = useAudience();
+const LEVELS = ["Débutant", "Intermédiaire", "Avancé"];
+
+// Filtre « Cours pour » : visible seulement avant l'inscription.
+// Une fois inscrit, le genre du compte filtre automatiquement tout le site.
+const PUBLICS = [
+  { value: "", label: "Tous" },
+  { value: "hommes", label: "Hommes" },
+  { value: "femmes", label: "Femmes" },
+  { value: "enfants", label: "Enfants" },
+];
+
+export default function TeacherSearch({ initialSubject, initialPublic }: { initialSubject: string; initialPublic: string }) {
+  const gender = useGender();
   const [subject, setSubject] = useState(initialSubject);
-  const [language, setLanguage] = useState("");
+  const [level, setLevel] = useState("");
   const [moment, setMoment] = useState("");
+  const [language, setLanguage] = useState("");
+  const [pub, setPub] = useState(PUBLICS.some((p) => p.value === initialPublic) ? initialPublic : "");
   const [nowOnly, setNowOnly] = useState(false);
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState("pertinence");
 
-  // Le choix « Pour qui ? » fait depuis l'accueil est appliqué ici
-  useEffect(() => {
-    if (AUDIENCES.some((a) => a.value === initialAudience)) setAudience(initialAudience as Audience);
-  }, [initialAudience]);
-
   const results = useMemo(() => {
     const q = query.trim().toLowerCase();
-    const list = teachersFor(audience).filter(
+    const base = gender ? teachersFor(gender) : TEACHERS;
+    const list = base.filter(
       (t) =>
+        (gender ||
+          !pub ||
+          (pub === "hommes" && t.gender === "homme" && t.accepts.includes("homme")) ||
+          (pub === "femmes" && t.gender === "femme" && t.accepts.includes("femme")) ||
+          (pub === "enfants" && (t.accepts.includes("garcon") || t.accepts.includes("fille")))) &&
         (!subject || t.subjects.includes(subject)) &&
-        (!language || t.languages.includes(language)) &&
+        (!level || t.levels.includes(level)) &&
         (!moment || t.available.includes(moment as never)) &&
+        (!language || t.languages.includes(language)) &&
         (!nowOnly || t.availableNow) &&
         (!q || `${t.name} ${t.headline} ${t.bio} ${t.subjects.join(" ")}`.toLowerCase().includes(q)),
     );
@@ -51,14 +59,14 @@ export default function TeacherSearch({
     else if (sort === "experience") sorted.sort((a, b) => b.lessons - a.lessons);
     else sorted.sort((a, b) => b.rating * Math.log(b.reviews) - a.rating * Math.log(a.reviews));
     return sorted;
-  }, [audience, subject, language, moment, nowOnly, query, sort]);
-
-  if (!audience) return <AudiencePicker />;
+  }, [gender, pub, subject, level, moment, language, nowOnly, query, sort]);
 
   const reset = () => {
     setSubject("");
-    setLanguage("");
+    setLevel("");
     setMoment("");
+    setLanguage("");
+    setPub("");
     setNowOnly(false);
     setQuery("");
   };
@@ -67,16 +75,17 @@ export default function TeacherSearch({
 
   return (
     <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <AudienceSwitch />
-        <p className="flex items-center gap-1.5 text-sm text-muted">
-          <ShieldCheck className="h-4 w-4 text-brand-500" /> Séparation stricte hommes / femmes
-        </p>
-      </div>
-
-      {/* Filtres visuels : matières / disponibilités / public / langue */}
-      <div className="z-30 mt-4 rounded-3xl border border-line bg-white/90 p-4 backdrop-blur-xl sm:px-5 lg:sticky lg:top-[72px]">
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-[1fr_1fr_1fr_1.4fr]">
+      {/* Filtres */}
+      <div className="z-30 rounded-3xl border border-line bg-white/90 p-4 backdrop-blur-xl sm:px-5 lg:sticky lg:top-[72px]">
+        <div className={`grid grid-cols-2 gap-3 ${gender ? "lg:grid-cols-4" : "lg:grid-cols-5"}`}>
+          {!gender && (
+            <label className="block">
+              <span className="mb-1 block text-xs font-bold text-muted">Cours pour</span>
+              <select className={selectCls} value={pub} onChange={(e) => setPub(e.target.value)}>
+                {PUBLICS.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
+              </select>
+            </label>
+          )}
           <label className="block">
             <span className="mb-1 block text-xs font-bold text-muted">Matière</span>
             <select className={selectCls} value={subject} onChange={(e) => setSubject(e.target.value)}>
@@ -85,7 +94,14 @@ export default function TeacherSearch({
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-xs font-bold text-muted">Disponibilités</span>
+            <span className="mb-1 block text-xs font-bold text-muted">Niveau</span>
+            <select className={selectCls} value={level} onChange={(e) => setLevel(e.target.value)}>
+              <option value="">Tous</option>
+              {LEVELS.map((l) => <option key={l}>{l}</option>)}
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-xs font-bold text-muted">Horaires</span>
             <select className={selectCls} value={moment} onChange={(e) => setMoment(e.target.value)}>
               <option value="">Peu importe</option>
               {MOMENTS.map((m) => <option key={m.value} value={m.value}>{m.label}</option>)}
@@ -98,48 +114,34 @@ export default function TeacherSearch({
               {LANGUAGES.map((l) => <option key={l}>{l}</option>)}
             </select>
           </label>
-          <label className="col-span-2 block lg:col-span-1">
-            <span className="mb-1 block text-xs font-bold text-muted">Recherche</span>
-            <span className="relative block">
-              <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
-              <input
-                type="search"
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                placeholder="Nom, sujet, mot-clé…"
-                className={`${selectCls} !pl-10`}
-              />
-            </span>
-          </label>
         </div>
-        <div className="-mx-4 mt-3 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:px-0 [&>button]:shrink-0">
+        <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <span className="relative block flex-1">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Rechercher un nom, un sujet…"
+              aria-label="Rechercher"
+              className={`${selectCls} !pl-10`}
+            />
+          </span>
           <button
             type="button"
             onClick={() => setNowOnly((v) => !v)}
-            className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-bold transition ${
+            className={`inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full px-4 py-2.5 text-sm font-bold transition ${
               nowOnly ? "bg-rose-500 text-white" : "bg-rose-50 text-rose-600 hover:bg-rose-100"
             }`}
           >
             <Zap className="h-4 w-4" /> Disponible maintenant
           </button>
-          {SUBJECTS.slice(0, 6).map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => setSubject((cur) => (cur === s ? "" : s))}
-              className={`rounded-full px-3.5 py-1.5 text-sm font-bold transition ${
-                subject === s ? "bg-brand-500 text-white" : "bg-brand-50 text-brand-700 hover:bg-brand-100"
-              }`}
-            >
-              {s}
-            </button>
-          ))}
         </div>
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <p className="font-display text-lg font-extrabold">
-          {results.length} enseignant{results.length > 1 ? "s" : ""} pour vous
+          {results.length} enseignant{results.length > 1 ? "s" : ""}
         </p>
         <label className="flex items-center gap-2 text-sm">
           <SlidersHorizontal className="h-4 w-4" />

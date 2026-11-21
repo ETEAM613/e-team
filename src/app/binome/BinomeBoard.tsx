@@ -4,24 +4,23 @@ import Link from "next/link";
 import { useState } from "react";
 import { BadgeCheck, Clock, MapPin, MessageCircle, Plus } from "lucide-react";
 import { BINOME_REQUESTS, MOMENTS, SUBJECTS } from "@/lib/data";
-import { useAudience } from "@/lib/audience";
-import { AudienceSwitch } from "@/components/AudiencePicker";
+import { useGender } from "@/lib/profile";
 import DemoForm from "@/components/DemoForm";
 import { btn, chip, input } from "@/components/ui";
 
 const momentLabel = (m: string) => MOMENTS.find((x) => x.value === m)?.label ?? m;
 
 export default function BinomeBoard() {
-  const audience = useAudience();
+  const gender = useGender();
   const [subject, setSubject] = useState("");
   const [showForm, setShowForm] = useState(false);
 
-  const list = BINOME_REQUESTS.filter((r) => r.audience === audience && (!subject || r.subject === subject));
+  const list = BINOME_REQUESTS.filter((r) => (!gender || r.audience === gender) && (!subject || r.subject === subject));
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <AudienceSwitch />
+        <p className="text-sm text-muted">Gratuit · réservé aux comptes vérifiés</p>
         <button onClick={() => setShowForm((v) => !v)} className={`${btn.primary} !bg-emerald-500 !shadow-emerald-500/25 hover:!bg-emerald-600`}>
           <Plus className="h-5 w-5" /> Publier ma demande
         </button>

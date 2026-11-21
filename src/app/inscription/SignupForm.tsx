@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { BookOpen, GraduationCap, Users } from "lucide-react";
-import DemoForm from "@/components/DemoForm";
 import GoogleIcon from "@/components/GoogleIcon";
-import { SUBJECTS } from "@/lib/data";
+import { SUBJECTS, type Gender } from "@/lib/data";
+import { setGender } from "@/lib/profile";
 import { btn, input } from "@/components/ui";
 
 type Role = "eleve" | "parent" | "enseignant";
@@ -16,8 +17,19 @@ const ROLES: { value: Role; label: string; icon: typeof BookOpen; desc: string }
   { value: "enseignant", label: "Enseignant", icon: GraduationCap, desc: "J'enseigne" },
 ];
 
-export default function SignupForm({ initialRole }: { initialRole: Role }) {
+export default function SignupForm({ initialRole, initialGender }: { initialRole: Role; initialGender: Gender | null }) {
+  const router = useRouter();
   const [role, setRole] = useState<Role>(initialRole);
+  const [gender, setG] = useState<Gender | null>(initialGender);
+
+  // Aperçu : le compte n'est pas encore enregistré (étape 2), mais le genre
+  // choisi adapte déjà tout le site (enseignants, cours en direct, SOS, binômes).
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!gender) return;
+    setGender(gender);
+    router.push("/enseignants");
+  };
 
   return (
     <div className="w-full max-w-lg rounded-[2rem] border border-line bg-white p-7 shadow-2xl shadow-brand-500/10 sm:p-9">
@@ -43,7 +55,33 @@ export default function SignupForm({ initialRole }: { initialRole: Role }) {
         ))}
       </div>
 
-      <DemoForm className="mt-6 space-y-4">
+      <form onSubmit={submit} className="mt-6 space-y-4">
+        <fieldset>
+          <legend className="mb-1.5 block text-sm font-bold">Je suis</legend>
+          <div className="grid grid-cols-2 gap-2">
+            {([
+              ["homme", "Un homme"],
+              ["femme", "Une femme"],
+            ] as const).map(([value, label]) => (
+              <label
+                key={value}
+                className="flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-line px-4 py-3 font-semibold has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
+              >
+                <input
+                  type="radio"
+                  name="genre"
+                  required
+                  checked={gender === value}
+                  onChange={() => setG(value)}
+                  className="accent-[var(--color-brand-500)]"
+                />
+                {label}
+              </label>
+            ))}
+          </div>
+          {role === "parent" && <p className="mt-1.5 text-xs text-muted">Vous indiquerez le genre de chaque enfant en l&apos;ajoutant.</p>}
+        </fieldset>
+
         <button type="submit" className={`${btn.outline} w-full !py-3.5`}>
           <GoogleIcon /> Continuer avec Google
         </button>
@@ -51,33 +89,15 @@ export default function SignupForm({ initialRole }: { initialRole: Role }) {
           <span className="h-px flex-1 bg-line" /> ou avec votre e-mail <span className="h-px flex-1 bg-line" />
         </div>
 
-        <fieldset>
-          <legend className="mb-1.5 block text-sm font-bold">Je suis</legend>
-          <div className="grid grid-cols-2 gap-2">
-            {["Un homme", "Une femme"].map((g) => (
-              <label
-                key={g}
-                className="flex cursor-pointer items-center gap-2 rounded-2xl border-2 border-line px-4 py-3 font-semibold has-[:checked]:border-brand-500 has-[:checked]:bg-brand-50"
-              >
-                <input type="radio" name="genre" required className="accent-[var(--color-brand-500)]" /> {g}
-              </label>
-            ))}
-          </div>
-          <p className="mt-1.5 text-xs text-muted">
-            Hommes et femmes sont strictement séparés sur e-team.
-            {role === "parent" && " Vous indiquerez le genre de chaque enfant en l'ajoutant."}
-          </p>
-        </fieldset>
-
         <label className="block">
           <span className="mb-1.5 block text-sm font-bold">Prénom et nom</span>
-          <input required autoComplete="name" className={input} />
+          <input autoComplete="name" className={input} />
         </label>
 
         {role === "enseignant" && (
           <label className="block">
             <span className="mb-1.5 block text-sm font-bold">Matière principale</span>
-            <select required className={input} defaultValue="">
+            <select className={input} defaultValue="">
               <option value="" disabled>Choisir…</option>
               {SUBJECTS.map((s) => <option key={s}>{s}</option>)}
             </select>
@@ -86,11 +106,11 @@ export default function SignupForm({ initialRole }: { initialRole: Role }) {
 
         <label className="block">
           <span className="mb-1.5 block text-sm font-bold">E-mail</span>
-          <input type="email" required autoComplete="email" className={input} placeholder="vous@exemple.com" />
+          <input type="email" autoComplete="email" className={input} placeholder="vous@exemple.com" />
         </label>
         <label className="block">
           <span className="mb-1.5 block text-sm font-bold">Mot de passe</span>
-          <input type="password" required minLength={8} autoComplete="new-password" className={input} />
+          <input type="password" minLength={8} autoComplete="new-password" className={input} />
           <span className="mt-1 block text-xs text-muted">8 caractères minimum</span>
         </label>
 
@@ -105,7 +125,7 @@ export default function SignupForm({ initialRole }: { initialRole: Role }) {
         {role === "enseignant" && (
           <p className="text-center text-xs text-muted">Votre profil sera vérifié (diplômes et antécédents) avant sa mise en ligne.</p>
         )}
-      </DemoForm>
+      </form>
 
       <p className="mt-6 text-center text-sm text-muted">
         Déjà inscrit ?{" "}

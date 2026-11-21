@@ -4,23 +4,19 @@ import Link from "next/link";
 import { useState } from "react";
 import { CheckCircle2, Lock, Video, X, Zap } from "lucide-react";
 import { teachersFor, type Teacher } from "@/lib/data";
-import { useAudience } from "@/lib/audience";
-import AudiencePicker, { AudienceSwitch } from "@/components/AudiencePicker";
+import { useGender } from "@/lib/profile";
 import Avatar from "@/components/Avatar";
 import { btn, chip } from "@/components/ui";
 
 export default function SosBoard() {
-  const audience = useAudience();
+  const gender = useGender();
   const [calling, setCalling] = useState<Teacher | null>(null);
 
-  if (!audience) return <AudiencePicker title="Pour qui est ce SOS ?" />;
-
-  const online = teachersFor(audience).filter((t) => t.availableNow);
+  const online = teachersFor(gender).filter((t) => t.availableNow);
 
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <AudienceSwitch />
         <p className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
           <span className="live-dot" /> {online.length} enseignant{online.length > 1 ? "s" : ""} disponible{online.length > 1 ? "s" : ""} maintenant
         </p>

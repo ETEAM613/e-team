@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { BadgeCheck, BookOpen, ChevronLeft, GraduationCap, Languages, MapPin, Star, Users } from "lucide-react";
 import { getTeacher, TEACHERS } from "@/lib/data";
 import Avatar from "@/components/Avatar";
-import AudienceGate from "@/components/AudienceGate";
+import ProfileGate from "@/components/ProfileGate";
 import { chip } from "@/components/ui";
 import BookingWidget from "./BookingWidget";
 
@@ -27,6 +27,7 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
   const { id } = await params;
   const t = getTeacher(id);
   if (!t) notFound();
+  const kidsTeacher = t.accepts.includes("garcon") || t.accepts.includes("fille");
 
   return (
     <div className="container-page py-8">
@@ -35,12 +36,7 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
       </Link>
 
       <div className="mt-6">
-        <AudienceGate
-          allowed={t.accepts}
-          lockedTitle="Profil non accessible"
-          lockedText="Cet enseignant ne reçoit pas d'élèves correspondant à votre profil. Les espaces hommes et femmes sont strictement séparés."
-          pickerTitle="Pour qui est ce cours ?"
-        >
+        <ProfileGate hideFor={kidsTeacher ? [] : [t.gender === "homme" ? "femme" : "homme"]}>
           <div className="grid gap-10 lg:grid-cols-[1fr_420px]">
             <div className="min-w-0">
               <div className="flex flex-col gap-6 rounded-[2rem] border border-line bg-white p-6 sm:flex-row sm:p-8">
@@ -128,7 +124,7 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
               <BookingWidget teacher={t} />
             </aside>
           </div>
-        </AudienceGate>
+        </ProfileGate>
       </div>
     </div>
   );

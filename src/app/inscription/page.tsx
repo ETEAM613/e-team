@@ -4,11 +4,16 @@ import SignupForm from "./SignupForm";
 
 export const metadata: Metadata = { title: "Inscription" };
 
-type SP = Promise<{ role?: string }>;
+type SP = Promise<{ role?: string; genre?: string }>;
 
 async function Form({ searchParams }: { searchParams: SP }) {
-  const { role } = await searchParams;
-  return <SignupForm initialRole={role === "enseignant" ? "enseignant" : "eleve"} />;
+  const { role, genre } = await searchParams;
+  return (
+    <SignupForm
+      initialRole={role === "enseignant" ? "enseignant" : "eleve"}
+      initialGender={genre === "homme" || genre === "femme" ? genre : null}
+    />
+  );
 }
 
 export default function SignupPage({ searchParams }: { searchParams: SP }) {
