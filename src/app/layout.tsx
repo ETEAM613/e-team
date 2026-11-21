@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { getCurrentUser } from "@/lib/server/auth";
+import { unreadCount } from "@/lib/server/messages";
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -30,13 +31,14 @@ export const metadata: Metadata = {
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const user = await getCurrentUser();
+  const unread = user ? await unreadCount(user.id) : 0;
   return (
     <html lang="fr" className={`${jakarta.variable} ${bricolage.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <div className="bg-amber-300 px-4 py-2 text-center text-xs font-bold text-ink sm:text-sm">
           🚧 Version d&apos;aperçu — site en construction. Les enseignants, avis et chiffres affichés sont des exemples.
         </div>
-        <Header user={user ? { firstName: user.firstName, gender: user.gender, role: user.role } : null} />
+        <Header user={user ? { firstName: user.firstName, gender: user.gender, role: user.role, unread } : null} />
         <main className="flex-1">{children}</main>
         <Footer />
       </body>

@@ -78,6 +78,33 @@ const MIGRATIONS: { id: string; sql: string[] }[] = [
       ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
     ],
   },
+  {
+    id: "002_messagerie",
+    sql: [
+      `CREATE TABLE IF NOT EXISTS conversations (
+        id CHAR(36) PRIMARY KEY,
+        student_id CHAR(36) NOT NULL,
+        teacher_profile_id CHAR(36) NOT NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        last_message_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE KEY uniq_pair (student_id, teacher_profile_id),
+        INDEX (teacher_profile_id),
+        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE,
+        FOREIGN KEY (teacher_profile_id) REFERENCES teacher_profiles(id) ON DELETE CASCADE
+      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+      `CREATE TABLE IF NOT EXISTS messages (
+        id CHAR(36) PRIMARY KEY,
+        conversation_id CHAR(36) NOT NULL,
+        sender_id CHAR(36) NOT NULL,
+        body TEXT NOT NULL,
+        created_at DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
+        read_at DATETIME NULL,
+        INDEX (conversation_id, created_at),
+        FOREIGN KEY (conversation_id) REFERENCES conversations(id) ON DELETE CASCADE,
+        FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE
+      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+    ],
+  },
 ];
 
 /** Profils de démonstration (marqués is_demo) pour que le site ne soit pas vide au lancement. */

@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Heart, Menu, X } from "lucide-react";
+import { Heart, Menu, MessageCircle, X } from "lucide-react";
 import Logo from "./Logo";
 import { logout } from "@/app/actions/auth";
 import type { Gender } from "@/lib/data";
 
-export type HeaderUser = { firstName: string; gender: Gender; role: string } | null;
+export type HeaderUser = { firstName: string; gender: Gender; role: string; unread: number } | null;
 import { btn } from "./ui";
 
 type NavItem = { href: string; label: string; badge?: "live" | "sos"; womenOnly?: boolean };
@@ -62,6 +62,14 @@ export default function Header({ user }: { user: HeaderUser }) {
           </Link>
           {user ? (
             <>
+              <Link href="/messages" className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Messagerie">
+                <MessageCircle className="h-5 w-5" />
+                {user.unread > 0 && (
+                  <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white">
+                    {user.unread}
+                  </span>
+                )}
+              </Link>
               {user.role === "admin" && (
                 <Link href="/admin" className="rounded-full px-4 py-2 text-sm font-bold text-ink hover:bg-surface">Admin</Link>
               )}
@@ -88,6 +96,16 @@ export default function Header({ user }: { user: HeaderUser }) {
         </div>
 
         <div className="flex items-center gap-2 xl:hidden">
+          {user && (
+            <Link href="/messages" className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Messagerie">
+              <MessageCircle className="h-5 w-5" />
+              {user.unread > 0 && (
+                <span className="absolute -right-0.5 -top-0.5 grid h-5 min-w-5 place-items-center rounded-full bg-rose-500 px-1 text-[11px] font-bold text-white">
+                  {user.unread}
+                </span>
+              )}
+            </Link>
+          )}
           <Link
             href="/don"
             className="inline-flex items-center gap-1 rounded-full bg-gradient-to-r from-pink-500 to-rose-500 px-3 py-2 text-sm font-bold text-white"
