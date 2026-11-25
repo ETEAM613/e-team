@@ -127,6 +127,38 @@ const MIGRATIONS: { id: string; sql: string[] }[] = [
       ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
     ],
   },
+  {
+    // Réservation : disponibilités hebdomadaires (par heure, dans le fuseau de l'enseignant) et cours réservés.
+    id: "004_reservations",
+    sql: [
+      `ALTER TABLE teacher_profiles ADD COLUMN timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Paris'`,
+      `CREATE TABLE IF NOT EXISTS teacher_availability (
+        teacher_profile_id CHAR(36) NOT NULL,
+        weekday TINYINT UNSIGNED NOT NULL,
+        hour TINYINT UNSIGNED NOT NULL,
+        PRIMARY KEY (teacher_profile_id, weekday, hour),
+        FOREIGN KEY (teacher_profile_id) REFERENCES teacher_profiles(id) ON DELETE CASCADE
+      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+      `CREATE TABLE IF NOT EXISTS lessons (
+        id CHAR(36) PRIMARY KEY,
+        teacher_profile_id CHAR(36) NOT NULL,
+        student_id CHAR(36) NOT NULL,
+        child_id CHAR(36) NULL,
+        starts_at DATETIME NOT NULL,
+        duration_min SMALLINT UNSIGNED NOT NULL,
+        subject VARCHAR(80) NULL,
+        status ENUM('booked','cancelled') NOT NULL DEFAULT 'booked',
+        is_trial TINYINT(1) NOT NULL DEFAULT 0,
+        student_timezone VARCHAR(64) NOT NULL DEFAULT 'Europe/Paris',
+        cancelled_by CHAR(36) NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        INDEX (teacher_profile_id, starts_at),
+        INDEX (student_id, starts_at),
+        FOREIGN KEY (teacher_profile_id) REFERENCES teacher_profiles(id) ON DELETE CASCADE,
+        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+    ],
+  },
 ];
 
 /** Profils de démonstration (marqués is_demo) pour que le site ne soit pas vide au lancement. */

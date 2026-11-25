@@ -6,6 +6,8 @@ import { myChildren, removeChild } from "@/app/actions/account";
 import { logout } from "@/app/actions/auth";
 import { btn } from "@/components/ui";
 import AddChildForm from "./AddChildForm";
+import LessonList from "@/components/LessonList";
+import { studentLessons } from "@/lib/server/lessons";
 
 export const metadata: Metadata = { title: "Mon compte" };
 
@@ -14,6 +16,7 @@ const ROLE_LABEL = { eleve: "Élève", parent: "Parent", enseignant: "Enseignant
 export default async function AccountPage() {
   const user = await requireUser();
   const children = await myChildren();
+  const lessons = await studentLessons(user.id);
 
   return (
     <div className="container-page max-w-4xl py-12">
@@ -44,6 +47,18 @@ export default async function AccountPage() {
           </Link>
         )}
       </div>
+
+      {/* Mes cours */}
+      <section id="cours" className="mt-12 scroll-mt-24">
+        <h2 className="text-2xl font-extrabold">Mes cours à venir</h2>
+        <div className="mt-4">
+          <LessonList
+            lessons={lessons}
+            as="student"
+            empty={<>Aucun cours réservé. <Link href="/enseignants" className="font-bold text-brand-600 hover:underline">Réserver mon premier cours (offert)</Link></>}
+          />
+        </div>
+      </section>
 
       {/* Enfants */}
       <section id="enfants" className="mt-12 scroll-mt-24 rounded-[2rem] border border-line bg-white p-6 sm:p-8">

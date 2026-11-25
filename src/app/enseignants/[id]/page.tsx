@@ -7,6 +7,9 @@ import Avatar from "@/components/Avatar";
 import Unavailable from "@/components/Unavailable";
 import { chip } from "@/components/ui";
 import BookingWidget from "./BookingWidget";
+import { query } from "@/lib/server/db";
+import { freeSlots } from "@/lib/server/lessons";
+import { getTeacherRowBySlug } from "@/lib/server/messages";
 
 // Titre neutre : le nom n'est pas exposé aux profils qui n'ont pas accès à la fiche
 export const metadata: Metadata = { title: "Profil enseignant" };
@@ -21,6 +24,21 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
   const user = await getCurrentUser();
   // Le serveur ne renvoie la fiche que si elle correspond au compte connecté.
   const t = await getTeacherForViewer(id, user?.gender ?? null);
+
+  // Données de réservation (créneaux libres calculés côté serveur)
+  const row = t && process.env.DATABASE_URL ? await getTeacherRowBySlug(id) : null;
+  const isDemo = !row || !row.user_id;
+  const profile = row ? { id: row.id, timezone: row.timezone } : null;
+  const [slots30, slots60] = profile && !isDemo
+    ? await Promise.all([freeSlots(profile, 30, user?.id ?? null), freeSlots(profile, 60, user?.id ?? null)])
+    : [[], []];
+  const kids =
+    user && t
+      ? (await query<{ id: string; first_name: string; gender: "garcon" | "fille" }>("SELECT id, first_name, gender FROM children WHERE parent_id = ?", [user.id]))
+          .filter((c) => t.accepts.includes(c.gender))
+          .map((c) => ({ id: c.id, name: c.first_name }))
+      : [];
+  const canBookSelf = !user || (!!t && t.gender === user.gender && t.accepts.includes(user.gender));
 
   return (
     <div className="container-page py-8">
@@ -116,7 +134,16 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
             </div>
 
             <aside id="reserver" className="scroll-mt-24 lg:sticky lg:top-24 lg:self-start">
-              <BookingWidget teacher={t} />
+              <BookingWidget
+                teacherSlug={t.id}
+                teacherName={t.name}
+                subjects={t.subjects}
+                slots={{ 30: slots30, 60: slots60 }}
+                loggedIn={!!user}
+                canBookSelf={canBookSelf}
+                kids={kids}
+                isDemo={isDemo}
+              />
             </aside>
           </div>
         )}

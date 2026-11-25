@@ -6,6 +6,9 @@ import { query } from "@/lib/server/db";
 import { toTeacher, type TeacherRow } from "@/lib/server/teachers";
 import { removeDemoTeachers, setTeacherStatus, setUserStatus } from "@/app/actions/account";
 import Avatar from "@/components/Avatar";
+import LocalTime from "@/components/LocalTime";
+import { nowMs } from "@/lib/server/clock";
+import { allLessons } from "@/lib/server/lessons";
 import { chip, input } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Administration" };
@@ -25,6 +28,8 @@ const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short
 
 export default async function AdminPage() {
   const admin = await requireAdmin();
+  const lessons = await allLessons();
+  const upcoming = lessons.filter((l) => l.status === "booked" && l.startsAt.getTime() + l.durationMin * 60000 > nowMs()).reverse();
   const [pending, approved, users, [{ demo }]] = await Promise.all([
     query<TeacherRow & { email: string | null }>(
       `SELECT t.*, u.email FROM teacher_profiles t LEFT JOIN users u ON u.id = t.user_id WHERE t.status = 'pending' ORDER BY t.updated_at`,
@@ -38,7 +43,7 @@ export default async function AdminPage() {
     { label: "Inscrits", value: users.length, tone: "from-brand-500 to-indigo-700" },
     { label: "Profils à vérifier", value: pending.length, tone: "from-amber-400 to-orange-500" },
     { label: "Enseignants en ligne", value: approved.length, tone: "from-teal-400 to-sky-600" },
-    { label: "Comptes suspendus", value: users.filter((u) => u.status === "suspended").length, tone: "from-rose-500 to-pink-600" },
+    { label: "Cours à venir", value: upcoming.length, tone: "from-rose-500 to-pink-600" },
   ];
 
   return (
@@ -54,6 +59,39 @@ export default async function AdminPage() {
           </div>
         ))}
       </div>
+
+      {/* Cours */}
+      <section className="mt-12">
+        <h2 className="text-2xl font-extrabold">Cours à venir</h2>
+        <div className="mt-4 overflow-x-auto rounded-[1.5rem] border border-line bg-white">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="bg-surface text-muted">
+              <tr>
+                <th className="px-5 py-3 font-bold">Date</th>
+                <th className="px-5 py-3 font-bold">Enseignant</th>
+                <th className="px-5 py-3 font-bold">Élève</th>
+                <th className="px-5 py-3 font-bold">Durée</th>
+                <th className="px-5 py-3 font-bold">Sujet</th>
+              </tr>
+            </thead>
+            <tbody>
+              {upcoming.length === 0 && (
+                <tr><td colSpan={5} className="px-5 py-6 text-center text-muted">Aucun cours à venir.</td></tr>
+              )}
+              {upcoming.map((l) => (
+                <tr key={l.id} className="border-t border-line">
+                  <td className="px-5 py-3 font-semibold"><Link href={`/cours/${l.id}`} className="hover:underline"><LocalTime iso={l.startsAt.toISOString()} /></Link></td>
+                  <td className="px-5 py-3">{l.teacherName}</td>
+                  <td className="px-5 py-3">{l.childName ? `${l.childName} (${l.studentName})` : l.studentName}{l.isTrial ? " · essai" : ""}</td>
+                  <td className="px-5 py-3">{l.durationMin === 30 ? "30 min" : "1 h"}</td>
+                  <td className="px-5 py-3 text-muted">{l.subject ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 text-xs text-muted">{lessons.filter((l) => l.status === "booked").length} cours réservés et {lessons.filter((l) => l.status === "cancelled").length} annulés sur les 30 derniers jours et à venir.</p>
+      </section>
 
       {/* Enseignants à vérifier */}
       <section className="mt-12">

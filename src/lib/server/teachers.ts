@@ -36,6 +36,7 @@ export type TeacherRow = {
   students: number;
   gradient: string;
   is_demo: number;
+  timezone: string;
 };
 
 const list = <T,>(json: string): T[] => {

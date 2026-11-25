@@ -8,6 +8,9 @@ import { query } from "@/lib/server/db";
 import { openSosForTeacher } from "@/lib/server/sos";
 import { btn } from "@/components/ui";
 import TeacherProfileForm from "./TeacherProfileForm";
+import AvailabilityEditor from "./AvailabilityEditor";
+import LessonList from "@/components/LessonList";
+import { getAvailability, teacherLessons } from "@/lib/server/lessons";
 
 export const metadata: Metadata = { title: "Espace enseignant" };
 
@@ -41,6 +44,8 @@ export default async function TeacherSpacePage({ searchParams }: { searchParams:
   const [{ sos_opt_in }] = await query<{ sos_opt_in: number }>("SELECT sos_opt_in FROM users WHERE id = ?", [user.id]);
   const sosOn = !!sos_opt_in;
   const openSos = await openSosForTeacher(user);
+  const availability = row ? [...(await getAvailability(row.id))] : [];
+  const lessons = await teacherLessons(user.id);
   const status = STATUS[row?.status ?? "draft"];
   const teacher = row ? toTeacher(row) : null;
 
@@ -102,6 +107,25 @@ export default async function TeacherSpacePage({ searchParams }: { searchParams:
           </ul>
         )}
       </section>
+
+      {row && (
+        <>
+          <section id="cours" className="mt-8 scroll-mt-24">
+            <h2 className="text-2xl font-extrabold">Mes cours à venir</h2>
+            <div className="mt-4">
+              <LessonList lessons={lessons} as="teacher" empty="Aucun cours réservé pour le moment." />
+            </div>
+          </section>
+          <section id="disponibilites" className="mt-8 scroll-mt-24 rounded-[2rem] border border-line bg-white p-6 sm:p-8">
+            <h2 className="text-2xl font-extrabold">Mes disponibilités</h2>
+            <p className="mt-1 text-sm text-muted">Les élèves réservent des cours de 30 min ou 1 h dans ces heures, jusqu&apos;à 3 semaines à l&apos;avance.</p>
+            <div className="mt-5">
+              <AvailabilityEditor initial={availability} timezone={row.timezone} />
+            </div>
+          </section>
+          <h2 className="mt-10 text-2xl font-extrabold">Mon profil</h2>
+        </>
+      )}
 
       <TeacherProfileForm
         gender={user.gender}
