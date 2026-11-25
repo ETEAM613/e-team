@@ -26,7 +26,8 @@ export default async function TestVideoPage() {
   let error = "";
   try {
     const start = new Date(nowMs());
-    const r = await ensureRoom(`test-${admin.id}`, start, 30);
+    // Une salle de test par tranche de 30 min (une salle expirée ne peut pas être réutilisée)
+    const r = await ensureRoom(`test${Math.floor(start.getTime() / 1800000)}`, start, 30);
     const token = await meetingToken(r.name, `${admin.firstName} (test)`, true, new Date(start.getTime() + 60 * 60000));
     room = { url: r.url, token };
   } catch (err) {
