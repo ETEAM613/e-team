@@ -67,6 +67,7 @@ export default async function AdminPage() {
     <div className="container-page py-12">
       <h1 className="text-4xl font-extrabold">Administration</h1>
       <p className="mt-2 text-muted">Validation des enseignants et gestion des comptes.</p>
+      <Link href="/admin/test-video" className="mt-4 inline-flex items-center gap-2 rounded-full bg-brand-50 px-4 py-2 text-sm font-bold text-brand-700 hover:bg-brand-100">🎥 Tester la vidéo</Link>
 
       <div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {stats.map((s) => (
