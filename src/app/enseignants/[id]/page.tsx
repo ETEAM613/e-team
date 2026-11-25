@@ -35,7 +35,7 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
           <div className="grid gap-10 lg:grid-cols-[1fr_420px]">
             <div className="min-w-0">
               <div className="flex flex-col gap-6 rounded-[2rem] border border-line bg-white p-6 sm:flex-row sm:p-8">
-                <Avatar name={t.name} gradient={t.gradient} size={140} online={t.availableNow} />
+                <Avatar name={t.name} gradient={t.gradient} size={140} />
                 <div>
                   <div className="flex flex-wrap items-center gap-2">
                     <h1 className="text-3xl font-extrabold sm:text-4xl">{t.name}</h1>
@@ -44,7 +44,7 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
                   <p className="mt-1 font-medium text-muted">{t.title}</p>
                   {t.availableNow && (
                     <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-sm font-bold text-emerald-700">
-                      <span className="live-dot" /> Disponible maintenant pour un SOS
+                      ⚡ Répond aux demandes SOS
                     </p>
                   )}
                   <p className="mt-4 text-xl font-bold">{t.headline}</p>

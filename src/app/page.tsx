@@ -95,8 +95,8 @@ export default async function Home() {
                 <Zap className="h-5 w-5 fill-white" />
               </span>
               <div className="text-sm">
-                <p className="font-bold">SOS · 5 enseignants</p>
-                <p className="flex items-center gap-1.5 text-muted"><span className="live-dot !h-1.5 !w-1.5" /> disponibles maintenant</p>
+                <p className="font-bold">SOS · une question urgente ?</p>
+                <p className="flex items-center gap-1.5 text-muted"><span className="live-dot !h-1.5 !w-1.5" /> les enseignants sont alertés</p>
               </div>
             </div>
 

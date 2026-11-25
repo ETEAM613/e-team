@@ -67,7 +67,7 @@ export default function ModulesGrid({ hideWomen = false }: { hideWomen?: boolean
           <Arrow />
         </div>
         <div className="mt-auto">
-          <Tag><span className="live-dot !h-1.5 !w-1.5" /> Disponible maintenant</Tag>
+          <Tag><span className="live-dot !h-1.5 !w-1.5" /> Réponse rapide</Tag>
           <h3 className="mt-4 text-3xl font-extrabold">SOS</h3>
           <p className="mt-2 text-white/85">Une question urgente ? Un enseignant en 1:1, tout de suite.</p>
         </div>

@@ -142,7 +142,7 @@ export default function TeacherSearch({
               nowOnly ? "bg-rose-500 text-white" : "bg-rose-50 text-rose-600 hover:bg-rose-100"
             }`}
           >
-            <Zap className="h-4 w-4" /> Disponible maintenant
+            <Zap className="h-4 w-4" /> Répond aux SOS
           </button>
         </div>
       </div>

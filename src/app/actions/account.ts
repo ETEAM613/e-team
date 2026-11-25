@@ -107,9 +107,9 @@ export async function saveTeacherProfile(_: FormState, formData: FormData): Prom
     const gradients = ["from-violet-500 to-indigo-600", "from-sky-500 to-blue-600", "from-teal-400 to-emerald-600", "from-pink-500 to-rose-500", "from-amber-400 to-orange-500", "from-fuchsia-500 to-purple-600"];
     await execute(
       `INSERT INTO teacher_profiles (id, user_id, slug, display_name, title, headline, bio, country, accepts, subjects, languages,
-         levels, available, experience, gender, status, gradient)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [randomUUID(), user.id, slug, ...values, user.gender, submit ? "pending" : "draft", gradients[Math.floor(Math.random() * gradients.length)]],
+         levels, available, experience, gender, status, gradient, available_now)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, (SELECT sos_opt_in FROM users WHERE id = ?))`,
+      [randomUUID(), user.id, slug, ...values, user.gender, submit ? "pending" : "draft", gradients[Math.floor(Math.random() * gradients.length)], user.id],
     );
   }
   if (submit && existing?.status !== "approved" && existing?.status !== "pending") {
@@ -133,22 +133,14 @@ ${siteUrl()}/admin`,
   };
 }
 
-export async function setAvailableNow(on: boolean) {
-  const user = await requireUser("/espace-enseignant");
-  await execute("UPDATE teacher_profiles SET available_now = ? WHERE user_id = ? AND status = 'approved'", [on ? 1 : 0, user.id]);
-  revalidatePath("/espace-enseignant");
-  revalidatePath("/sos");
-}
-
 /* ---------- Administration ---------- */
 
 export async function setTeacherStatus(profileId: string, status: "approved" | "rejected", formData?: FormData) {
   await requireAdmin();
   const note = String(formData?.get("note") ?? "").slice(0, 500) || null;
-  await execute("UPDATE teacher_profiles SET status = ?, admin_note = ?, available_now = IF(? = 'approved', available_now, 0) WHERE id = ?", [
+  await execute("UPDATE teacher_profiles SET status = ?, admin_note = ? WHERE id = ?", [
     status,
     note,
-    status,
     profileId,
   ]);
   const [t] = await query<{ email: string | null; first_name: string | null; slug: string }>(
@@ -187,7 +179,6 @@ export async function setUserStatus(userId: string, status: "active" | "suspende
   await execute("UPDATE users SET status = ? WHERE id = ?", [status, userId]);
   if (status === "suspended") {
     await execute("DELETE FROM sessions WHERE user_id = ?", [userId]);
-    await execute("UPDATE teacher_profiles SET available_now = 0 WHERE user_id = ?", [userId]);
   }
   revalidatePath("/admin");
 }

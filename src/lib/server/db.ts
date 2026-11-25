@@ -16,6 +16,10 @@ export function pool(): mysql.Pool {
       timezone: "Z",
       dateStrings: false,
     });
+    // Toutes les dates en UTC, quelle que soit la configuration du serveur MySQL
+    globalForDb.eteamPool.pool.on("connection", (conn) => {
+      conn.query("SET time_zone = '+00:00'");
+    });
   }
   return globalForDb.eteamPool;
 }

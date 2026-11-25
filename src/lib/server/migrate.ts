@@ -105,6 +105,28 @@ const MIGRATIONS: { id: string; sql: string[] }[] = [
       ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
     ],
   },
+  {
+    // SOS : l'enseignant choisit s'il participe (available_now = « participe au SOS »),
+    // l'élève lance une demande envoyée à tous les enseignants SOS de son genre.
+    id: "003_sos",
+    sql: [
+      `ALTER TABLE users ADD COLUMN sos_opt_in TINYINT(1) NOT NULL DEFAULT 0`,
+      `CREATE TABLE IF NOT EXISTS sos_requests (
+        id CHAR(36) PRIMARY KEY,
+        student_id CHAR(36) NOT NULL,
+        gender ENUM('homme','femme') NOT NULL,
+        question VARCHAR(1000) NOT NULL,
+        status ENUM('open','taken','cancelled') NOT NULL DEFAULT 'open',
+        teacher_user_id CHAR(36) NULL,
+        conversation_id CHAR(36) NULL,
+        created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        taken_at DATETIME NULL,
+        INDEX (status, gender, created_at),
+        INDEX (student_id),
+        FOREIGN KEY (student_id) REFERENCES users(id) ON DELETE CASCADE
+      ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
+    ],
+  },
 ];
 
 /** Profils de démonstration (marqués is_demo) pour que le site ne soit pas vide au lancement. */

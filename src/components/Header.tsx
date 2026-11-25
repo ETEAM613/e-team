@@ -8,7 +8,7 @@ import Logo from "./Logo";
 import { logout } from "@/app/actions/auth";
 import type { Gender } from "@/lib/data";
 
-export type HeaderUser = { firstName: string; gender: Gender; role: string; unread: number } | null;
+export type HeaderUser = { firstName: string; gender: Gender; role: string; unread: number; sos: number } | null;
 import { btn } from "./ui";
 
 type NavItem = { href: string; label: string; badge?: "live" | "sos"; womenOnly?: boolean };
@@ -62,6 +62,11 @@ export default function Header({ user }: { user: HeaderUser }) {
           </Link>
           {user ? (
             <>
+              {user.sos > 0 && (
+                <Link href="/espace-enseignant#sos" className="animate-pulse rounded-full bg-rose-500 px-3 py-1.5 text-xs font-extrabold text-white">
+                  🚨 {user.sos} SOS
+                </Link>
+              )}
               <Link href="/messages" className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Messagerie">
                 <MessageCircle className="h-5 w-5" />
                 {user.unread > 0 && (
@@ -96,6 +101,11 @@ export default function Header({ user }: { user: HeaderUser }) {
         </div>
 
         <div className="flex items-center gap-2 xl:hidden">
+          {user && user.sos > 0 && (
+            <Link href="/espace-enseignant#sos" className="animate-pulse rounded-full bg-rose-500 px-2.5 py-1.5 text-xs font-extrabold text-white">
+              🚨 {user.sos}
+            </Link>
+          )}
           {user && (
             <Link href="/messages" className="relative grid h-10 w-10 place-items-center rounded-full hover:bg-surface" aria-label="Messagerie">
               <MessageCircle className="h-5 w-5" />

@@ -48,8 +48,8 @@ export async function signup(_: FormState, formData: FormData): Promise<FormStat
   const id = randomUUID();
   const role = isAdminEmail(d.email) ? "admin" : d.role;
   await execute(
-    "INSERT INTO users (id, email, password_hash, first_name, last_name, gender, role) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    [id, d.email, await hashPassword(d.password), d.firstName, d.lastName, d.gender, role],
+    "INSERT INTO users (id, email, password_hash, first_name, last_name, gender, role, sos_opt_in) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [id, d.email, await hashPassword(d.password), d.firstName, d.lastName, d.gender, role, d.role === "enseignant" && formData.get("sos") === "oui" ? 1 : 0],
   );
   await createSession(id);
   await notify(

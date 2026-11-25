@@ -101,6 +101,23 @@ export default function SignupForm({ initialRole, initialGender }: { initialRole
           <span className="mt-1 block text-xs text-muted">8 caractères minimum</span>
         </label>
 
+        {role === "enseignant" && (
+          <fieldset className="rounded-2xl bg-rose-50/60 p-4 ring-1 ring-rose-100">
+            <legend className="sr-only">SOS</legend>
+            <p className="text-sm font-bold">Voulez-vous recevoir les demandes SOS ?</p>
+            <p className="mt-0.5 text-xs text-muted">
+              Quand un élève a une question urgente, tous les enseignants SOS reçoivent une alerte par e-mail. Le premier disponible répond. Modifiable à tout moment dans votre espace.
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-2">
+              {([["oui", "Oui, je participe"], ["non", "Non merci"]] as const).map(([v, l]) => (
+                <label key={v} className="flex cursor-pointer items-center gap-2 rounded-xl border-2 border-line bg-white px-3 py-2.5 text-sm font-semibold has-[:checked]:border-rose-400 has-[:checked]:bg-rose-50">
+                  <input type="radio" name="sos" value={v} required className="accent-rose-500" /> {l}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        )}
+
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" name="terms" required className="mt-1 accent-[var(--color-brand-500)]" />
           <span>J&apos;accepte les conditions d&apos;utilisation et la politique de confidentialité.</span>

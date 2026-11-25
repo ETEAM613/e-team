@@ -9,7 +9,7 @@ export default function TeacherCard({ teacher: t }: { teacher: Teacher }) {
     <article className="group rounded-3xl border border-line bg-white p-5 transition duration-300 hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-xl hover:shadow-brand-500/10 sm:p-6">
       <div className="flex flex-col gap-5 sm:flex-row">
         <Link href={`/enseignants/${t.id}`} className="shrink-0">
-          <Avatar name={t.name} gradient={t.gradient} size={112} online={t.availableNow} />
+          <Avatar name={t.name} gradient={t.gradient} size={112} />
         </Link>
 
         <div className="min-w-0 flex-1">
@@ -19,8 +19,8 @@ export default function TeacherCard({ teacher: t }: { teacher: Teacher }) {
             </Link>
             {t.verified && <BadgeCheck className="h-5 w-5 text-brand-500" aria-label="Profil vérifié" />}
             {t.availableNow && (
-              <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-bold text-emerald-700">
-                <span className="live-dot !h-1.5 !w-1.5" /> Disponible maintenant
+              <span className="inline-flex items-center gap-1 rounded-full bg-rose-50 px-2.5 py-0.5 text-xs font-bold text-rose-600">
+                <Zap className="h-3 w-3" /> Répond aux SOS
               </span>
             )}
           </div>

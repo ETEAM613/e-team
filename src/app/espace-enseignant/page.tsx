@@ -3,7 +3,9 @@ import Link from "next/link";
 import { BadgeCheck, Clock, Eye, FileText, XCircle, Zap } from "lucide-react";
 import { requireUser } from "@/lib/server/auth";
 import { getTeacherRowByUser, toTeacher } from "@/lib/server/teachers";
-import { setAvailableNow } from "@/app/actions/account";
+import { setSosOptIn, takeSos } from "@/app/actions/sos";
+import { query } from "@/lib/server/db";
+import { openSosForTeacher } from "@/lib/server/sos";
 import { btn } from "@/components/ui";
 import TeacherProfileForm from "./TeacherProfileForm";
 
@@ -16,7 +18,13 @@ const STATUS = {
   rejected: { icon: XCircle, label: "Profil refusé", text: "Votre profil n'a pas été validé. Modifiez-le puis renvoyez-le.", tone: "bg-rose-50 text-rose-800" },
 } as const;
 
-export default async function TeacherSpacePage() {
+const ago = (d: Date) => {
+  const min = Math.max(1, Math.round((Date.now() - d.getTime()) / 60000));
+  return min < 60 ? `il y a ${min} min` : "il y a plus d'une heure";
+};
+
+export default async function TeacherSpacePage({ searchParams }: { searchParams: Promise<{ sos?: string }> }) {
+  const { sos } = await searchParams;
   const user = await requireUser("/espace-enseignant");
 
   if (user.role !== "enseignant") {
@@ -30,6 +38,9 @@ export default async function TeacherSpacePage() {
   }
 
   const row = await getTeacherRowByUser(user.id);
+  const [{ sos_opt_in }] = await query<{ sos_opt_in: number }>("SELECT sos_opt_in FROM users WHERE id = ?", [user.id]);
+  const sosOn = !!sos_opt_in;
+  const openSos = await openSosForTeacher(user);
   const status = STATUS[row?.status ?? "draft"];
   const teacher = row ? toTeacher(row) : null;
 
@@ -51,23 +62,46 @@ export default async function TeacherSpacePage() {
         )}
       </div>
 
-      {row?.status === "approved" && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[1.5rem] border border-line bg-white p-5">
+      {/* SOS : participation et demandes en attente */}
+      <section id="sos" className="mt-4 scroll-mt-24 rounded-[1.5rem] border border-line bg-white p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="flex items-center gap-2 font-extrabold"><Zap className="h-5 w-5 text-rose-500" /> Disponible maintenant (SOS)</p>
-            <p className="text-sm text-muted">Activez-le quand vous pouvez répondre tout de suite à un élève.</p>
+            <p className="flex items-center gap-2 font-extrabold"><Zap className="h-5 w-5 text-rose-500" /> Je participe au SOS</p>
+            <p className="text-sm text-muted">Vous recevez un e-mail à chaque SOS d&apos;un élève. Le premier enseignant qui accepte répond.</p>
           </div>
-          <form action={setAvailableNow.bind(null, !row.available_now)}>
-            <button
-              className={`rounded-full px-5 py-2.5 text-sm font-bold transition ${
-                row.available_now ? "bg-emerald-500 text-white hover:bg-emerald-600" : "bg-surface text-ink hover:bg-brand-50"
-              }`}
-            >
-              {row.available_now ? "Disponible ✓ (cliquer pour arrêter)" : "Me rendre disponible"}
-            </button>
-          </form>
+          <div className="grid grid-cols-2 gap-1 rounded-full bg-surface p-1">
+            <form action={setSosOptIn.bind(null, true)}>
+              <button className={`w-full rounded-full px-5 py-2 text-sm font-bold transition ${sosOn ? "bg-rose-500 text-white" : "text-muted hover:text-ink"}`}>Oui</button>
+            </form>
+            <form action={setSosOptIn.bind(null, false)}>
+              <button className={`w-full rounded-full px-5 py-2 text-sm font-bold transition ${!sosOn ? "bg-ink text-white" : "text-muted hover:text-ink"}`}>Non</button>
+            </form>
+          </div>
         </div>
-      )}
+        {sosOn && row?.status !== "approved" && (
+          <p className="mt-3 text-sm text-muted">Vous recevrez les SOS dès que votre profil sera validé.</p>
+        )}
+        {sos === "deja-pris" && (
+          <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">Ce SOS a déjà été pris par un autre enseignant (ou a expiré).</p>
+        )}
+        {openSos.length > 0 && (
+          <ul className="mt-4 space-y-3">
+            {openSos.map((r) => (
+              <li key={r.id} className="flex flex-wrap items-center gap-3 rounded-2xl bg-rose-50 p-4 ring-1 ring-rose-100">
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-rose-600">🚨 SOS de {r.studentFirstName} · {ago(r.createdAt)}</p>
+                  <p className="mt-1 font-semibold">« {r.question} »</p>
+                </div>
+                <form action={takeSos.bind(null, r.id)}>
+                  <button className="rounded-full bg-rose-500 px-5 py-2.5 text-sm font-bold text-white shadow-md shadow-rose-500/30 hover:bg-rose-600">
+                    Je prends
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <TeacherProfileForm
         gender={user.gender}
