@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/server/auth";
 import { dailyEnabled, ensureRoom, meetingToken } from "@/lib/server/daily";
 import { nowMs } from "@/lib/server/clock";
 import { btn } from "@/components/ui";
+import TestCallLinks from "./TestCallLinks";
 
 export const metadata: Metadata = { title: "Test vidéo" };
 
@@ -57,6 +58,7 @@ export default async function TestVideoPage() {
           </div>
         )
       )}
+      <TestCallLinks />
     </div>
   );
 }
