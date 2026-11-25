@@ -17,6 +17,7 @@ type Props = {
   canBookSelf: boolean;
   kids: { id: string; name: string }[];
   isDemo: boolean;
+  callModes: string[];
 };
 
 const subscribeNoop = () => () => {};
@@ -217,7 +218,7 @@ export default function BookingWidget(p: Props) {
         <MessageCircle className="h-4 w-4" /> Envoyer un message
       </Link>
       <ul className="mt-4 space-y-1.5 text-xs text-muted">
-        <li className="flex gap-2"><Video className="h-4 w-4 shrink-0 text-brand-500" /> Le cours se déroule en vidéo directement sur e-team</li>
+        <li className="flex gap-2"><Video className="h-4 w-4 shrink-0 text-brand-500" /> Cours par : {p.callModes.map((m) => (m === "video" ? "vidéo sur e-team" : m === "whatsapp" ? "appel WhatsApp" : "téléphone")).join(", ")}</li>
         <li className="flex gap-2"><Mail className="h-4 w-4 shrink-0 text-brand-500" /> Confirmation par e-mail à vous et à {p.teacherName.split(" ")[0]}</li>
       </ul>
     </Shell>

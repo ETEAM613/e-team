@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { saveTeacherProfile } from "@/app/actions/account";
-import { LANGUAGES, MOMENTS, SUBJECTS, type Gender } from "@/lib/data";
+import { CALL_MODES, LANGUAGES, MOMENTS, SUBJECTS, type Gender } from "@/lib/data";
 import FormError from "@/components/FormError";
 import { btn, input } from "@/components/ui";
 
@@ -18,6 +18,8 @@ type Initial = {
   levels: string[];
   available: string[];
   kids: string[];
+  callModes: string[];
+  phone: string;
 };
 
 function Checks({ name, options, selected }: { name: string; options: { value: string; label: string }[]; selected: string[] }) {
@@ -101,6 +103,17 @@ export default function TeacherProfileForm({ initial, gender, approved }: { init
             selected={initial.kids}
           />
         </div>
+      </div>
+
+      <div className="rounded-2xl bg-surface p-5">
+        <p className="mb-1 text-sm font-bold">Comment faites-vous cours ?</p>
+        <p className="mb-3 text-xs text-muted">Cochez une, deux ou les trois options. L&apos;élève choisira parmi elles au moment du cours.</p>
+        <Checks name="callModes" options={CALL_MODES.map((m) => ({ value: m.value, label: m.label }))} selected={initial.callModes} />
+        <label className="mt-4 block max-w-sm">
+          <span className="mb-1.5 block text-sm font-bold">Numéro pour WhatsApp / téléphone</span>
+          <input name="phone" type="tel" defaultValue={initial.phone} className={input} placeholder="+33612345678" />
+          <span className="mt-1 block text-xs text-muted">Format international. Visible par l&apos;élève uniquement au moment du cours.</span>
+        </label>
       </div>
 
       <FormError state={state} />

@@ -142,6 +142,8 @@ export default async function TeacherSpacePage({ searchParams }: { searchParams:
           levels: teacher?.levels ?? [],
           available: teacher?.available ?? [],
           kids: (teacher?.accepts ?? []).filter((a) => a === "garcon" || a === "fille"),
+          callModes: teacher?.callModes ?? ["video"],
+          phone: row?.phone ?? "",
         }}
       />
     </div>

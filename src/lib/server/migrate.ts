@@ -159,6 +159,22 @@ const MIGRATIONS: { id: string; sql: string[] }[] = [
       ) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`,
     ],
   },
+  {
+    // Déroulement des cours : moyen choisi (vidéo e-team, WhatsApp, téléphone) et suivi pour la comptabilité.
+    id: "005_suivi_cours",
+    sql: [
+      `ALTER TABLE teacher_profiles ADD COLUMN call_modes VARCHAR(60) NOT NULL DEFAULT '["video"]'`,
+      `ALTER TABLE teacher_profiles ADD COLUMN phone VARCHAR(30) NULL`,
+      `ALTER TABLE lessons ADD COLUMN mode ENUM('video','whatsapp','phone') NULL`,
+      `ALTER TABLE lessons ADD COLUMN started_at DATETIME NULL`,
+      `ALTER TABLE lessons ADD COLUMN daily_room VARCHAR(120) NULL`,
+      `ALTER TABLE lessons ADD COLUMN video_minutes SMALLINT UNSIGNED NULL`,
+      `ALTER TABLE lessons ADD COLUMN teacher_outcome ENUM('done','early','student_absent','teacher_absent') NULL`,
+      `ALTER TABLE lessons ADD COLUMN teacher_minutes SMALLINT UNSIGNED NULL`,
+      `ALTER TABLE lessons ADD COLUMN student_outcome ENUM('done','early','student_absent','teacher_absent') NULL`,
+      `ALTER TABLE lessons ADD COLUMN student_minutes SMALLINT UNSIGNED NULL`,
+    ],
+  },
 ];
 
 /** Profils de démonstration (marqués is_demo) pour que le site ne soit pas vide au lancement. */
@@ -195,7 +211,15 @@ export function migrate(): Promise<void> {
       const applied = new Set((await query<{ id: string }>("SELECT id FROM schema_migrations")).map((r) => r.id));
       for (const m of MIGRATIONS) {
         if (applied.has(m.id)) continue;
-        for (const statement of m.sql) await execute(statement);
+        for (const statement of m.sql) {
+          try {
+            await execute(statement);
+          } catch (err) {
+            // Colonne ou table déjà créée (migration interrompue puis relancée) : on continue
+            const errno = (err as { errno?: number }).errno;
+            if (errno !== 1060 && errno !== 1050) throw err;
+          }
+        }
         await execute("INSERT INTO schema_migrations (id) VALUES (?)", [m.id]);
         console.log(`[e-team] migration appliquée : ${m.id}`);
       }

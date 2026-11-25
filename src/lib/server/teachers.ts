@@ -1,7 +1,7 @@
 import "server-only";
 import { query } from "./db";
 import { migrate } from "./migrate";
-import { TEACHERS, type Audience, type Gender, type Moment, type Teacher } from "@/lib/data";
+import { TEACHERS, type Audience, type CallMode, type Gender, type Moment, type Teacher } from "@/lib/data";
 
 // Sans base configurée (ex. copie de secours), on affiche les profils de démonstration.
 const hasDb = () => !!process.env.DATABASE_URL;
@@ -37,6 +37,8 @@ export type TeacherRow = {
   gradient: string;
   is_demo: number;
   timezone: string;
+  call_modes: string;
+  phone: string | null;
 };
 
 const list = <T,>(json: string): T[] => {
@@ -70,6 +72,7 @@ export function toTeacher(r: TeacherRow): Teacher {
     students: r.students,
     gradient: r.gradient,
     verified: r.status === "approved",
+    callModes: r.call_modes ? list<CallMode>(r.call_modes) : ["video"],
   };
 }
 

@@ -153,3 +153,85 @@ export async function cancelLesson(lessonId: string) {
   revalidatePath("/espace-enseignant");
   redirect(`/cours/${lessonId}`);
 }
+
+/* ---------- Déroulement du cours ---------- */
+
+type LessonCtx = {
+  student_id: string;
+  teacher_user: string | null;
+  starts_at: Date;
+  duration_min: number;
+  status: string;
+  call_modes: string;
+  teacher_phone: string | null;
+  started_at: Date | null;
+};
+
+async function lessonCtx(lessonId: string, userId: string) {
+  const [l] = await query<LessonCtx>(
+    `SELECT l.student_id, t.user_id AS teacher_user, l.starts_at, l.duration_min, l.status, t.call_modes, t.phone AS teacher_phone, l.started_at
+       FROM lessons l JOIN teacher_profiles t ON t.id = l.teacher_profile_id WHERE l.id = ?`,
+    [lessonId],
+  );
+  if (!l || (l.student_id !== userId && l.teacher_user !== userId)) return null;
+  return l;
+}
+
+export type StartState = { error?: string; href?: string } | undefined;
+
+/** Démarre le cours avec le moyen choisi ; renvoie l'adresse à ouvrir (salle vidéo, WhatsApp ou téléphone). */
+export async function startLesson(_: StartState, formData: FormData): Promise<StartState> {
+  const lessonId = String(formData.get("lesson") ?? "");
+  const mode = String(formData.get("mode") ?? "") as "video" | "whatsapp" | "phone";
+  const user = await requireUser(`/cours/${lessonId}`);
+  const l = await lessonCtx(lessonId, user.id);
+  if (!l || l.status !== "booked") return { error: "Cours introuvable." };
+
+  const start = new Date(l.starts_at).getTime();
+  const end = start + l.duration_min * 60000;
+  if (Date.now() < start - 10 * 60000) return { error: "Le cours ouvre 10 minutes avant l'heure prévue." };
+  if (Date.now() > end + 30 * 60000) return { error: "L'heure de ce cours est passée." };
+
+  let modes: string[] = ["video"];
+  try {
+    modes = JSON.parse(l.call_modes);
+  } catch {}
+  if (!modes.includes(mode)) return { error: "Ce moyen n'est pas proposé par l'enseignant." };
+  if (mode === "video" && !process.env.DAILY_API_KEY) return { error: "La vidéo e-team n'est pas encore activée." };
+  if (mode !== "video" && !l.teacher_phone) return { error: "Numéro de l'enseignant indisponible." };
+
+  await execute("UPDATE lessons SET mode = ?, started_at = COALESCE(started_at, UTC_TIMESTAMP()) WHERE id = ?", [mode, lessonId]);
+  revalidatePath(`/cours/${lessonId}`);
+
+  const digits = (l.teacher_phone ?? "").replace(/\D/g, "");
+  if (mode === "whatsapp") return { href: `https://wa.me/${digits}` };
+  if (mode === "phone") return { href: `tel:+${digits}` };
+  return { href: `/cours/${lessonId}?salle=1` };
+}
+
+const reportSchemaOutcomes = ["done", "early", "student_absent", "teacher_absent"] as const;
+
+/** Fin du cours : chacun indique ce qui s'est passé (base de la comptabilité et du paiement des enseignants). */
+export async function reportLesson(_: FormState, formData: FormData): Promise<FormState> {
+  const lessonId = String(formData.get("lesson") ?? "");
+  const user = await requireUser(`/cours/${lessonId}`);
+  const l = await lessonCtx(lessonId, user.id);
+  if (!l || l.status !== "booked") return { error: "Cours introuvable." };
+  if (Date.now() < new Date(l.starts_at).getTime()) return { error: "Le cours n'a pas encore commencé." };
+
+  const outcome = String(formData.get("outcome") ?? "") as (typeof reportSchemaOutcomes)[number];
+  if (!reportSchemaOutcomes.includes(outcome)) return { error: "Indiquez comment s'est passé le cours." };
+  let minutes: number | null = null;
+  if (outcome === "done" || outcome === "early") {
+    minutes = Math.round(Number(formData.get("minutes")));
+    if (!minutes || minutes < 1 || minutes > l.duration_min + 60) return { error: "Indiquez la durée réelle du cours, en minutes." };
+  }
+
+  const who = l.teacher_user === user.id ? "teacher" : "student";
+  await execute(`UPDATE lessons SET ${who}_outcome = ?, ${who}_minutes = ? WHERE id = ?`, [outcome, minutes, lessonId]);
+  revalidatePath(`/cours/${lessonId}`);
+  revalidatePath("/mon-compte");
+  revalidatePath("/espace-enseignant");
+  revalidatePath("/admin");
+  return { ok: "Merci, c'est enregistré." };
+}

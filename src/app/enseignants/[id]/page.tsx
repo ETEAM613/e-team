@@ -143,6 +143,7 @@ export default async function TeacherPage({ params }: { params: Promise<{ id: st
                 canBookSelf={canBookSelf}
                 kids={kids}
                 isDemo={isDemo}
+                callModes={t.callModes ?? ["video"]}
               />
             </aside>
           </div>

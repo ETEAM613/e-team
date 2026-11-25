@@ -74,6 +74,11 @@ export async function saveTeacherProfile(_: FormState, formData: FormData): Prom
   if (!languages.length) return { error: "Choisissez au moins une langue." };
   if (!levels.length) return { error: "Choisissez au moins un niveau." };
   if (!available.length) return { error: "Choisissez au moins un moment de disponibilité." };
+  const callModes = pick(formData, "callModes", ["video", "whatsapp", "phone"]);
+  const phone = String(formData.get("phone") ?? "").replace(/[^\d+]/g, "").slice(0, 20);
+  if (!callModes.length) return { error: "Choisissez au moins un moyen de faire cours (vidéo, WhatsApp ou téléphone)." };
+  if ((callModes.includes("whatsapp") || callModes.includes("phone")) && !/^\+\d{8,15}$/.test(phone))
+    return { error: "Indiquez votre numéro au format international, par ex. +33612345678 ou +972501234567." };
 
   // Un enseignant reçoit les adultes de son propre genre, et éventuellement des enfants.
   const accepts = [user.gender, ...kids];
@@ -122,6 +127,7 @@ Vérifiez-le ici :
 ${siteUrl()}/admin`,
     );
   }
+  await execute("UPDATE teacher_profiles SET call_modes = ?, phone = ? WHERE user_id = ?", [JSON.stringify(callModes), phone || null, user.id]);
   revalidatePath("/espace-enseignant");
   return {
     ok:

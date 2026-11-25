@@ -8,7 +8,7 @@ import { removeDemoTeachers, setTeacherStatus, setUserStatus } from "@/app/actio
 import Avatar from "@/components/Avatar";
 import LocalTime from "@/components/LocalTime";
 import { nowMs } from "@/lib/server/clock";
-import { allLessons } from "@/lib/server/lessons";
+import { allLessons, lessonState } from "@/lib/server/lessons";
 import { chip, input } from "@/components/ui";
 
 export const metadata: Metadata = { title: "Administration" };
@@ -29,6 +29,23 @@ const dateFmt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short
 export default async function AdminPage() {
   const admin = await requireAdmin();
   const lessons = await allLessons();
+  const monthStart = new Date(nowMs());
+  monthStart.setUTCDate(1);
+  monthStart.setUTCHours(0, 0, 0, 0);
+  const byTeacher = new Map<string, { name: string; done: number; minutes: number; absent: number; toConfirm: number; disputes: number }>();
+  for (const l of lessons) {
+    if (l.status !== "booked" || l.startsAt < monthStart || l.startsAt.getTime() > nowMs()) continue;
+    const st = lessonState(l, nowMs());
+    const m = byTeacher.get(l.teacherName) ?? { name: l.teacherName, done: 0, minutes: 0, absent: 0, toConfirm: 0, disputes: 0 };
+    if (st.key === "done" || st.key === "early") {
+      m.done++;
+      m.minutes += st.minutes;
+    } else if (st.key === "student_absent" || st.key === "teacher_absent") m.absent++;
+    else if (st.key === "to_confirm") m.toConfirm++;
+    if (l.teacherOutcome && l.studentOutcome && l.teacherOutcome !== l.studentOutcome) m.disputes++;
+    byTeacher.set(l.teacherName, m);
+  }
+  const monthly = [...byTeacher.values()].sort((a, b) => b.done - a.done);
   const upcoming = lessons.filter((l) => l.status === "booked" && l.startsAt.getTime() + l.durationMin * 60000 > nowMs()).reverse();
   const [pending, approved, users, [{ demo }]] = await Promise.all([
     query<TeacherRow & { email: string | null }>(
@@ -59,6 +76,43 @@ export default async function AdminPage() {
           </div>
         ))}
       </div>
+
+      {/* Récapitulatif par enseignant (mois en cours) */}
+      <section className="mt-12">
+        <h2 className="text-2xl font-extrabold">Cours du mois par enseignant</h2>
+        <p className="mt-1 text-sm text-muted">Base du paiement des enseignants : 8 € par cours effectué. « À confirmer » = cours passé sans retour de l&apos;enseignant ni de l&apos;élève.</p>
+        <div className="mt-4 overflow-x-auto rounded-[1.5rem] border border-line bg-white">
+          <table className="w-full min-w-[720px] text-left text-sm">
+            <thead className="bg-surface text-muted">
+              <tr>
+                <th className="px-5 py-3 font-bold">Enseignant</th>
+                <th className="px-5 py-3 font-bold">Effectués</th>
+                <th className="px-5 py-3 font-bold">Minutes</th>
+                <th className="px-5 py-3 font-bold">Absences</th>
+                <th className="px-5 py-3 font-bold">À confirmer</th>
+                <th className="px-5 py-3 font-bold">Désaccords</th>
+                <th className="px-5 py-3 font-bold">À payer</th>
+              </tr>
+            </thead>
+            <tbody>
+              {monthly.length === 0 && (
+                <tr><td colSpan={7} className="px-5 py-6 text-center text-muted">Aucun cours ce mois-ci.</td></tr>
+              )}
+              {monthly.map((m) => (
+                <tr key={m.name} className="border-t border-line">
+                  <td className="px-5 py-3 font-semibold">{m.name}</td>
+                  <td className="px-5 py-3">{m.done}</td>
+                  <td className="px-5 py-3">{m.minutes}</td>
+                  <td className="px-5 py-3">{m.absent}</td>
+                  <td className="px-5 py-3">{m.toConfirm}</td>
+                  <td className={`px-5 py-3 ${m.disputes ? "font-bold text-rose-600" : ""}`}>{m.disputes}</td>
+                  <td className="px-5 py-3 font-extrabold">{m.done * 8} €</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
 
       {/* Cours */}
       <section className="mt-12">

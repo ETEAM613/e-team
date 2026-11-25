@@ -32,7 +32,17 @@ export type Teacher = {
   availableNow: boolean;
   gradient: string;
   verified: boolean;
+  /** Moyens de cours acceptés : vidéo e-team, appel WhatsApp, appel téléphonique. */
+  callModes?: CallMode[];
 };
+
+export type CallMode = "video" | "whatsapp" | "phone";
+
+export const CALL_MODES: { value: CallMode; label: string; short: string }[] = [
+  { value: "video", label: "Vidéo sur e-team", short: "Vidéo" },
+  { value: "whatsapp", label: "Appel WhatsApp", short: "WhatsApp" },
+  { value: "phone", label: "Appel téléphonique", short: "Téléphone" },
+];
 
 export const SUBJECTS = [
   "Guemara",

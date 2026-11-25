@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { CalendarDays, Video } from "lucide-react";
-import type { LessonItem } from "@/lib/server/lessons";
+import { lessonState, type LessonItem } from "@/lib/server/lessons";
 import Avatar from "./Avatar";
 import LocalTime from "./LocalTime";
 import { nowMs } from "@/lib/server/clock";
@@ -17,7 +17,9 @@ function List({ lessons, as, empty, now }: { lessons: LessonItem[]; as: "student
     <ul className="space-y-3">
       {lessons.map((l) => {
         const name = as === "student" ? l.teacherName : l.childName ? `${l.childName} (enfant de ${l.studentName})` : l.studentName;
-        const soon = l.startsAt.getTime() - now < 15 * 60000;
+        const st = lessonState(l, now);
+        const soon = st.key === "scheduled" && l.startsAt.getTime() - now < 15 * 60000;
+        const needsAction = st.key === "to_confirm" || st.key === "live";
         return (
           <li key={l.id}>
             <Link href={`/cours/${l.id}`} className="flex flex-wrap items-center gap-4 rounded-2xl border border-line bg-white p-4 transition hover:border-brand-300 hover:shadow-md">
@@ -30,8 +32,9 @@ function List({ lessons, as, empty, now }: { lessons: LessonItem[]; as: "student
                 </span>
               </span>
               {l.isTrial && <span className="rounded-full bg-pink-50 px-2.5 py-1 text-xs font-bold text-pink-600">Cours d&apos;essai</span>}
-              <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold ${soon ? "bg-brand-500 text-white" : "bg-surface text-ink"}`}>
-                <Video className="h-4 w-4" /> {soon ? "Rejoindre" : "Détails"}
+              <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${st.tone}`}>{st.label}</span>
+              <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-bold ${soon || needsAction ? "bg-brand-500 text-white" : "bg-surface text-ink"}`}>
+                <Video className="h-4 w-4" /> {soon ? "Rejoindre" : needsAction ? "Confirmer" : "Détails"}
               </span>
             </Link>
           </li>

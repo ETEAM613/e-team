@@ -85,11 +85,36 @@ export type LessonItem = {
   teacherGradient: string;
   studentName: string;
   childName: string | null;
+  mode: "video" | "whatsapp" | "phone" | null;
+  startedAt: Date | null;
+  videoMinutes: number | null;
+  teacherOutcome: Outcome | null;
+  teacherMinutes: number | null;
+  studentOutcome: Outcome | null;
+  studentMinutes: number | null;
 };
+
+export type Outcome = "done" | "early" | "student_absent" | "teacher_absent";
+
+/** Statut lisible d'un cours, pour les tableaux de bord et la comptabilité. */
+export function lessonState(l: LessonItem, now: number) {
+  const end = l.startsAt.getTime() + l.durationMin * 60000;
+  const outcome = l.teacherOutcome ?? l.studentOutcome;
+  const minutes = l.mode === "video" && l.videoMinutes != null ? l.videoMinutes : (l.teacherMinutes ?? l.studentMinutes);
+  if (l.status === "cancelled") return { key: "cancelled", label: "Annulé", tone: "bg-slate-100 text-slate-600", minutes: 0 };
+  if (outcome === "done") return { key: "done", label: `Effectué${minutes ? ` · ${minutes} min` : ""}`, tone: "bg-emerald-50 text-emerald-700", minutes: minutes ?? l.durationMin };
+  if (outcome === "early") return { key: "early", label: `Terminé en avance${minutes ? ` · ${minutes} min` : ""}`, tone: "bg-amber-50 text-amber-700", minutes: minutes ?? 0 };
+  if (outcome === "student_absent") return { key: "student_absent", label: "Élève absent", tone: "bg-rose-50 text-rose-700", minutes: 0 };
+  if (outcome === "teacher_absent") return { key: "teacher_absent", label: "Enseignant absent", tone: "bg-rose-50 text-rose-700", minutes: 0 };
+  if (now > end) return { key: "to_confirm", label: "À confirmer", tone: "bg-amber-50 text-amber-700", minutes: 0 };
+  if (l.startedAt) return { key: "live", label: "En cours", tone: "bg-brand-50 text-brand-700", minutes: 0 };
+  return { key: "scheduled", label: "Programmé", tone: "bg-surface text-ink", minutes: 0 };
+}
 
 const LESSON_SELECT = `SELECT l.id, l.starts_at, l.duration_min, l.subject, l.status, l.is_trial,
        t.display_name AS teacher_name, t.slug AS teacher_slug, t.gradient AS teacher_gradient,
-       CONCAT(u.first_name, ' ', u.last_name) AS student_name, c.first_name AS child_name
+       CONCAT(u.first_name, ' ', u.last_name) AS student_name, c.first_name AS child_name,
+       l.mode, l.started_at, l.video_minutes, l.teacher_outcome, l.teacher_minutes, l.student_outcome, l.student_minutes
   FROM lessons l
   JOIN teacher_profiles t ON t.id = l.teacher_profile_id
   JOIN users u ON u.id = l.student_id
@@ -107,6 +132,13 @@ type LessonRow = {
   teacher_gradient: string;
   student_name: string;
   child_name: string | null;
+  mode: LessonItem["mode"];
+  started_at: Date | null;
+  video_minutes: number | null;
+  teacher_outcome: Outcome | null;
+  teacher_minutes: number | null;
+  student_outcome: Outcome | null;
+  student_minutes: number | null;
 };
 
 const toItem = (r: LessonRow): LessonItem => ({
@@ -121,14 +153,20 @@ const toItem = (r: LessonRow): LessonItem => ({
   teacherGradient: r.teacher_gradient,
   studentName: r.student_name,
   childName: r.child_name,
+  mode: r.mode,
+  startedAt: r.started_at ? new Date(r.started_at) : null,
+  videoMinutes: r.video_minutes,
+  teacherOutcome: r.teacher_outcome,
+  teacherMinutes: r.teacher_minutes,
+  studentOutcome: r.student_outcome,
+  studentMinutes: r.student_minutes,
 });
 
 /** Cours à venir (et en cours) d'un élève. */
 export async function studentLessons(userId: string) {
   await migrate();
   const rows = await query<LessonRow>(
-    `${LESSON_SELECT} WHERE l.student_id = ? AND l.status = 'booked'
-       AND l.starts_at + INTERVAL l.duration_min MINUTE > UTC_TIMESTAMP() ORDER BY l.starts_at`,
+    `${LESSON_SELECT} WHERE l.student_id = ? AND l.starts_at > UTC_TIMESTAMP() - INTERVAL 30 DAY ORDER BY l.starts_at`,
     [userId],
   );
   return rows.map(toItem);
@@ -138,8 +176,7 @@ export async function studentLessons(userId: string) {
 export async function teacherLessons(userId: string) {
   await migrate();
   const rows = await query<LessonRow>(
-    `${LESSON_SELECT} WHERE t.user_id = ? AND l.status = 'booked'
-       AND l.starts_at + INTERVAL l.duration_min MINUTE > UTC_TIMESTAMP() ORDER BY l.starts_at`,
+    `${LESSON_SELECT} WHERE t.user_id = ? AND l.starts_at > UTC_TIMESTAMP() - INTERVAL 30 DAY ORDER BY l.starts_at`,
     [userId],
   );
   return rows.map(toItem);
@@ -157,11 +194,15 @@ export async function allLessons() {
 /** Un cours, seulement pour l'élève, l'enseignant ou un admin. */
 export async function lessonForUser(lessonId: string, user: { id: string; role: string }) {
   await migrate();
-  const rows = await query<LessonRow & { student_id: string; teacher_user: string | null }>(
-    `${LESSON_SELECT.replace("SELECT l.id,", "SELECT l.id, l.student_id, t.user_id AS teacher_user,")} WHERE l.id = ?`,
+  const rows = await query<LessonRow & { student_id: string; teacher_user: string | null; daily_room: string | null; teacher_phone: string | null; call_modes: string }>(
+    `${LESSON_SELECT.replace("SELECT l.id,", "SELECT l.id, l.student_id, t.user_id AS teacher_user, l.daily_room, t.phone AS teacher_phone, t.call_modes,")} WHERE l.id = ?`,
     [lessonId],
   );
   const r = rows[0];
   if (!r || (r.student_id !== user.id && r.teacher_user !== user.id && user.role !== "admin")) return null;
-  return { ...toItem(r), iAmTeacher: r.teacher_user === user.id };
+  let callModes: ("video" | "whatsapp" | "phone")[] = ["video"];
+  try {
+    callModes = JSON.parse(r.call_modes);
+  } catch {}
+  return { ...toItem(r), iAmTeacher: r.teacher_user === user.id, iAmStudent: r.student_id === user.id, dailyRoom: r.daily_room, teacherPhone: r.teacher_phone, callModes };
 }
